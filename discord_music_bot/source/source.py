@@ -172,25 +172,47 @@ class DiscordFileSource(PCMVolumeTransformer):
 
 async def isPlayList(url: str, locale: Optional[discord.Locale] = None) -> Union[Dict, List[Dict]]:
     """URLがプレイリストかどうか確認し、情報を取得"""
-    ytdl_opts = YTDLSource.YTDL_OPTIONS.copy()
-    ytdl_opts.update({
-        'extract_flat': True,
+    ytdl_opts = {
+        'format': 'bestaudio/best',
+        'noplaylist': False,  # プレイリスト検出のため
+        'nocheckcertificate': True,
+        'ignoreerrors': False,
+        'logtostderr': False,
         'quiet': True,
-    })
+        'no_warnings': True,
+        'extract_flat': 'in_playlist',  # プレイリスト内のみフラット抽出
+        'skip_download': True,
+    }
     
     try:
         loop = asyncio.get_event_loop()
         ytdl = yt_dlp.YoutubeDL(ytdl_opts)
         data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=False))
         
+        if not data:
+            _log.error(f"No data extracted from {url}")
+            return {'title': '不明なタイトル', 'url': url, 'id': ''}
+        
+        # プレイリストかどうかチェック
         if 'entries' in data and len(data['entries']) > 1:
             # プレイリストの場合
+            _log.info(f"Detected playlist with {len(data['entries'])} items")
             results = []
             for entry in data['entries']:
                 if entry:
+                    # URLの構築
+                    entry_url = entry.get('url', '')
+                    if not entry_url.startswith('http'):
+                        # 相対URLの場合、動画IDから構築
+                        video_id = entry.get('id', '')
+                        if video_id:
+                            entry_url = f"https://www.youtube.com/watch?v={video_id}"
+                        else:
+                            entry_url = entry.get('webpage_url', '')
+                    
                     results.append({
                         'title': entry.get('title', '不明なタイトル'),
-                        'url': entry.get('url', ''),
+                        'url': entry_url,
                         'id': entry.get('id', ''),
                     })
             return results
@@ -201,12 +223,44 @@ async def isPlayList(url: str, locale: Optional[discord.Locale] = None) -> Union
             else:
                 entry = data
             
+            # タイトルを取得
+            title = entry.get('title', '')
+            if not title or title == 'NA':
+                # タイトルが取得できない場合は再取得
+                _log.info(f"Title not found, re-extracting without flat mode")
+                ytdl_opts_full = ytdl_opts.copy()
+                ytdl_opts_full['extract_flat'] = False
+                ytdl_full = yt_dlp.YoutubeDL(ytdl_opts_full)
+                data_full = await loop.run_in_executor(None, lambda: ytdl_full.extract_info(url, download=False))
+                
+                if data_full:
+                    if 'entries' in data_full and data_full['entries']:
+                        entry = data_full['entries'][0]
+                    else:
+                        entry = data_full
+                    title = entry.get('title', '不明なタイトル')
+            
+            # URLの構築
+            video_url = entry.get('webpage_url', '')
+            if not video_url:
+                video_url = entry.get('url', '')
+                if not video_url.startswith('http'):
+                    video_id = entry.get('id', '')
+                    if video_id:
+                        video_url = f"https://www.youtube.com/watch?v={video_id}"
+                    else:
+                        video_url = url
+            
+            _log.info(f"Extracted single video: {title}")
+            
             return {
-                'title': entry.get('title', '不明なタイトル'),
-                'url': entry.get('url', url),
+                'title': title,
+                'url': video_url,
                 'id': entry.get('id', ''),
             }
             
     except Exception as e:
         _log.error(f"Error checking playlist: {e}")
+        import traceback
+        traceback.print_exc()
         return {'title': '不明なタイトル', 'url': url, 'id': ''}
