@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import math
 import os
 import traceback
@@ -307,6 +308,83 @@ class MusicCog(commands.Cog):
             await interaction.followup.send(
                 f"🔀 シャッフルを{status}にしました。", ephemeral=True
             )
+        
+        elif custom_id == "forward":
+            if not voice_client or not voice_client.source:
+                await interaction.response.send_message(
+                    "再生中の音楽がありません。", ephemeral=True
+                )
+                return
+            
+            await interaction.response.defer(ephemeral=True)
+            source = voice_client.source
+            if hasattr(source, 'original'):
+                source = source.original
+            
+            # 10秒進める
+            new_progress = source.progress + 10
+            if new_progress < source.info.duration:
+                source.progress = new_progress
+                await interaction.followup.send("⏩ 10秒進めました。", ephemeral=True)
+            else:
+                await interaction.followup.send("⏩ これ以上進めません。", ephemeral=True)
+        
+        elif custom_id == "reverse":
+            if not voice_client or not voice_client.source:
+                await interaction.response.send_message(
+                    "再生中の音楽がありません。", ephemeral=True
+                )
+                return
+            
+            await interaction.response.defer(ephemeral=True)
+            source = voice_client.source
+            if hasattr(source, 'original'):
+                source = source.original
+            
+            # 10秒戻す
+            new_progress = max(0, source.progress - 10)
+            source.progress = new_progress
+            await interaction.followup.send("⏪ 10秒戻しました。", ephemeral=True)
+        
+        elif custom_id == "volume_up":
+            if not voice_client or not voice_client.source:
+                await interaction.response.send_message(
+                    "再生中の音楽がありません。", ephemeral=True
+                )
+                return
+            
+            await interaction.response.defer(ephemeral=True)
+            source = voice_client.source
+            if hasattr(source, 'original'):
+                source = source.original
+            
+            # 音量を0.1上げる（最大2.0）
+            new_volume = min(2.0, source.volume + 0.1)
+            source.volume = round(new_volume, 1)
+            
+            await interaction.followup.send(
+                f"🔊 音量を {int(source.volume * 100)}% に上げました。", ephemeral=True
+            )
+        
+        elif custom_id == "volume_down":
+            if not voice_client or not voice_client.source:
+                await interaction.response.send_message(
+                    "再生中の音楽がありません。", ephemeral=True
+                )
+                return
+            
+            await interaction.response.defer(ephemeral=True)
+            source = voice_client.source
+            if hasattr(source, 'original'):
+                source = source.original
+            
+            # 音量を0.1下げる（最小0.0）
+            new_volume = max(0.0, source.volume - 0.1)
+            source.volume = round(new_volume, 1)
+            
+            await interaction.followup.send(
+                f"🔉 音量を {int(source.volume * 100)}% に下げました。", ephemeral=True
+            )
 
     def create_now_playing_embed(
         self,
@@ -434,23 +512,55 @@ class MusicCog(commands.Cog):
                 voice_client.play(source, after=after_playing)
                 await state.set_playing(True)
                 
-                # 再生監視ループ
+                # 再生監視ループ（プログレスバー更新）
+                update_interval = 5  # 5秒ごとに更新
+                last_update = 0
+                
                 while state.playing and voice_client.is_connected():
                     await asyncio.sleep(1)
+                    
+                    # 再生時間を更新
+                    if voice_client.source:
+                        current_source = voice_client.source
+                        if hasattr(current_source, 'original'):
+                            current_source = current_source.original
+                        
+                        if hasattr(current_source, 'progress') and not voice_client.is_paused():
+                            current_source.progress += 1
+                    
+                    # 定期的に埋め込みを更新
+                    last_update += 1
+                    if last_update >= update_interval and not voice_client.is_paused():
+                        try:
+                            updated_embed = self.create_now_playing_embed(
+                                current_source, voice_client
+                            )
+                            view = create_control_view(
+                                voice_client.is_paused(),
+                                state.loop,
+                                state.shuffle
+                            )
+                            await message.edit(embed=updated_embed, view=view)
+                            last_update = 0
+                        except:
+                            pass
                 
                 # ループが有効な場合は同じ曲を再度再生
-                if state.loop and voice_client.is_connected() and not state.queue.empty():
-                    state.queue.put(item)  # 同じアイテムを再度キューに追加
+                if state.loop and voice_client.is_connected():
+                    # キューの先頭に戻す
+                    state.queue.put(item)
                 
                 # 終了時の処理
                 if voice_client.source:
                     voice_client.source.cleanup()
                 
-                embed = self.create_now_playing_embed(source, voice_client, finished=True)
-                try:
-                    await message.edit(embed=embed, view=None)
-                except:
-                    pass
+                # ループの場合は終了メッセージを表示しない
+                if not state.loop:
+                    embed = self.create_now_playing_embed(source, voice_client, finished=True)
+                    try:
+                        await message.edit(embed=embed, view=None)
+                    except:
+                        pass
         
         except Exception as e:
             traceback.print_exc()
@@ -467,40 +577,61 @@ class MusicCog(commands.Cog):
         state = self.guild_states[interaction.guild.id]
         
         try:
+            _log = logging.getLogger("music")
+            _log.info(f"Adding to queue: {url}")
+            
             # プレイリストかどうか確認
             result = await isPlayList(url, interaction.locale)
             
+            _log.info(f"Result from isPlayList: {result}")
+            
             if isinstance(result, list):
                 # プレイリストの場合
+                added_count = 0
                 for item_data in result:
-                    item = Item(
-                        user=interaction.user,
-                        url=item_data['url'],
-                        title=item_data['title'],
-                        volume=volume,
-                        locale=interaction.locale
-                    )
-                    state.queue.put(item)
+                    if item_data.get('url') and item_data.get('title'):
+                        item = Item(
+                            user=interaction.user,
+                            url=item_data['url'],
+                            title=item_data['title'],
+                            volume=volume,
+                            locale=interaction.locale
+                        )
+                        state.queue.put(item)
+                        added_count += 1
                 
-                await interaction.followup.send(
-                    f"✅ **{len(result)}曲**をキューに追加しました！"
-                )
+                if added_count > 0:
+                    await interaction.followup.send(
+                        f"✅ **{added_count}曲**をキューに追加しました！"
+                    )
+                else:
+                    await interaction.followup.send(
+                        f"⚠️ プレイリストから曲を取得できませんでした。"
+                    )
             else:
                 # 単一の曲の場合
+                title = result.get('title', '不明なタイトル')
+                video_url = result.get('url', url)
+                
+                _log.info(f"Single video - Title: {title}, URL: {video_url}")
+                
                 item = Item(
                     user=interaction.user,
-                    url=url,
-                    title=result['title'],
+                    url=video_url,
+                    title=title,
                     volume=volume,
                     locale=interaction.locale
                 )
                 state.queue.put(item)
                 
                 await interaction.followup.send(
-                    f"✅ **{result['title']}** をキューに追加しました！"
+                    f"✅ **{title}** をキューに追加しました！"
                 )
         
         except Exception as e:
+            _log.error(f"Error adding to queue: {e}")
+            import traceback
+            traceback.print_exc()
             await interaction.followup.send(f"❌ URLの処理に失敗しました: {e}")
 
     async def check_permissions(self, interaction: discord.Interaction, url: str = None) -> bool:
@@ -857,7 +988,12 @@ class MusicCog(commands.Cog):
             )
             return
         
-        voice_client.source.volume = volume
+        # PCMVolumeTransformerの場合、originalソースにアクセス
+        source = voice_client.source
+        if hasattr(source, 'original'):
+            source = source.original
+        
+        source.volume = volume
         
         if interaction.guild.id in self.guild_states:
             await self.guild_states[interaction.guild.id].set_volume(volume)
