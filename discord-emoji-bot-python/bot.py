@@ -30,6 +30,9 @@ intents.guilds = True
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 
+# スラッシュコマンド用のTree
+tree = bot.tree
+
 
 class EmojiResult:
     """絵文字登録結果を保持するクラス"""
@@ -202,7 +205,7 @@ async def register_emojis(guild: discord.Guild, images: Dict[str, bytes],
     result = EmojiResult()
     
     # 権限チェック
-    if not user.guild_permissions.manage_guild_expressions:
+    if not user.guild_permissions.manage_emojis:
         raise ValueError("絵文字を管理する権限がありません")
     
     # 絵文字スロット数をチェック
@@ -269,6 +272,14 @@ async def on_ready():
     """Bot起動時のイベント"""
     print(f"✅ ログイン成功: {bot.user.name} (ID: {bot.user.id})")
     print(f"📊 {len(bot.guilds)}個のサーバーに接続中")
+    
+    # スラッシュコマンドを同期
+    try:
+        synced = await bot.tree.sync()
+        print(f"🔄 {len(synced)}個のスラッシュコマンドを同期しました")
+    except Exception as e:
+        print(f"⚠️  スラッシュコマンドの同期に失敗: {e}")
+    
     print("🚀 Bot起動完了！ZIPファイルをアップロードして絵文字を登録できます。")
     print("-" * 50)
 
@@ -452,6 +463,123 @@ async def on_command_error(ctx, error):
     
     print(f"❌ コマンドエラー: {error}")
     await ctx.send(f"❌ エラーが発生しました: {str(error)}")
+
+
+# ============================================
+# スラッシュコマンド
+# ============================================
+
+@bot.tree.command(name="up_emoji", description="ZIPファイルから絵文字を登録します")
+async def slash_up_emoji(interaction: discord.Interaction, file: discord.Attachment):
+    """スラッシュコマンド: ZIPファイルから絵文字を登録"""
+    
+    # ZIPファイルかチェック
+    if not file.filename.lower().endswith('.zip'):
+        await interaction.response.send_message("❌ ZIPファイルをアップロードしてください", ephemeral=True)
+        return
+    
+    await interaction.response.defer()
+    
+    try:
+        # ZIPファイルをダウンロード
+        zip_data = await file.read()
+        
+        # 画像を抽出
+        images = extract_images_from_zip(zip_data)
+        
+        if not images:
+            await interaction.followup.send(
+                "❌ ZIPファイル内に有効な画像が見つかりませんでした。\n"
+                f"サポートされる形式: {', '.join(SUPPORTED_FORMATS).upper()} (最大256KB)"
+            )
+            return
+        
+        # 絵文字を登録
+        await interaction.followup.send(f"🔄 {len(images)}個の絵文字を登録中...")
+        result = await register_emojis(interaction.guild, images, interaction.user)
+        
+        # 結果を報告
+        report_lines = []
+        
+        if result.success_count > 0:
+            report_lines.append(f"✅ **登録成功 ({result.success_count}個)**")
+            emoji_str = " ".join([str(emoji) for _, emoji in result.success[:20]])
+            report_lines.append(emoji_str)
+            if result.success_count > 20:
+                report_lines.append(f"...他{result.success_count - 20}個")
+        
+        if result.failed_count > 0:
+            report_lines.append(f"\n❌ **登録失敗 ({result.failed_count}個)**")
+            for name, reason in result.failed[:3]:
+                report_lines.append(f"• `{name}`: {reason}")
+            if result.failed_count > 3:
+                report_lines.append(f"...他{result.failed_count - 3}件")
+        
+        await interaction.followup.send("\n".join(report_lines))
+        
+    except ValueError as e:
+        await interaction.followup.send(f"❌ エラー: {str(e)}")
+    except Exception as e:
+        print(f"❌ 予期しないエラー: {e}")
+        await interaction.followup.send(f"❌ 予期しないエラーが発生しました: {str(e)}")
+
+
+@bot.tree.command(name="emoji_info", description="サーバーの絵文字情報を表示します")
+async def slash_emoji_info(interaction: discord.Interaction):
+    """スラッシュコマンド: サーバーの絵文字情報"""
+    
+    guild = interaction.guild
+    if not guild:
+        await interaction.response.send_message("❌ このコマンドはサーバー内でのみ使用できます", ephemeral=True)
+        return
+    
+    current_emoji_count = len(guild.emojis)
+    
+    max_emojis = {
+        0: 50,
+        1: 100,
+        2: 150,
+        3: 250,
+    }.get(guild.premium_tier, 50)
+    
+    remaining_slots = max_emojis - current_emoji_count
+    
+    info_text = f"""
+📊 **{guild.name} の絵文字情報**
+
+**現在の絵文字数:** {current_emoji_count} / {max_emojis}
+**残りスロット:** {remaining_slots}
+**ブーストレベル:** {guild.premium_tier}
+**ブースト数:** {guild.premium_subscription_count}
+
+{'✅ まだ絵文字を追加できます！' if remaining_slots > 0 else '⚠️ 絵文字スロットが満杯です'}
+    """
+    
+    await interaction.response.send_message(info_text)
+
+
+@bot.tree.command(name="bot_stats", description="Botの統計情報を表示します")
+async def slash_bot_stats(interaction: discord.Interaction):
+    """スラッシュコマンド: Botの統計情報"""
+    
+    stats_text = f"""
+🤖 **Bot統計情報**
+
+**Bot名:** {bot.user.name}
+**接続サーバー数:** {len(bot.guilds)}
+**総ユーザー数:** {sum(g.member_count for g in bot.guilds)}
+
+**サポート形式:** {', '.join(sorted(SUPPORTED_FORMATS)).upper()}
+**最大ファイルサイズ:** {MAX_EMOJI_SIZE / 1024:.0f}KB
+**一度に処理:** 最大{MAX_EMOJIS_PER_ZIP}個
+
+**使い方:**
+• ZIPファイルをチャンネルにアップロード（自動処理）
+• `/up_emoji` コマンドでZIPから登録
+• `/emoji_info` でサーバー情報を確認
+    """
+    
+    await interaction.response.send_message(stats_text)
 
 
 def main():
