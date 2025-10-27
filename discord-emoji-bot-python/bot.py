@@ -473,14 +473,15 @@ async def on_command_error(ctx, error):
 async def slash_up_emoji(interaction: discord.Interaction, file: discord.Attachment):
     """スラッシュコマンド: ZIPファイルから絵文字を登録"""
     
-    # ZIPファイルかチェック
-    if not file.filename.lower().endswith('.zip'):
-        await interaction.response.send_message("❌ ZIPファイルをアップロードしてください", ephemeral=True)
-        return
-    
+    # すぐに応答（3秒以内に必要）
     await interaction.response.defer()
     
     try:
+        # ZIPファイルかチェック
+        if not file.filename.lower().endswith('.zip'):
+            await interaction.followup.send("❌ ZIPファイルをアップロードしてください")
+            return
+        
         # ZIPファイルをダウンロード
         zip_data = await file.read()
         
@@ -520,7 +521,10 @@ async def slash_up_emoji(interaction: discord.Interaction, file: discord.Attachm
     except ValueError as e:
         await interaction.followup.send(f"❌ エラー: {str(e)}")
     except Exception as e:
+        import traceback
+        error_detail = traceback.format_exc()
         print(f"❌ 予期しないエラー: {e}")
+        print(error_detail)
         await interaction.followup.send(f"❌ 予期しないエラーが発生しました: {str(e)}")
 
 
