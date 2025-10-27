@@ -252,9 +252,9 @@ async def register_emojis(guild: discord.Guild, images: Dict[str, bytes],
             result.add_success(final_name, emoji)
             print(f"✅ 絵文字登録成功: {final_name}")
             
-            # レート制限を避けるため待機
+            # レート制限を避けるため待機（2秒）
             import asyncio
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
             
         except discord.HTTPException as e:
             error_msg = str(e)
@@ -516,16 +516,33 @@ async def slash_up_emoji(interaction: discord.Interaction, file: discord.Attachm
             if result.failed_count > 3:
                 report_lines.append(f"...他{result.failed_count - 3}件")
         
-        await interaction.followup.send("\n".join(report_lines))
+        # 結果を送信（15分制限対策）
+        try:
+            await interaction.followup.send("\n".join(report_lines))
+        except discord.errors.HTTPException:
+            # Webhook Tokenが無効な場合、通常のメッセージで送信
+            channel = interaction.channel
+            if channel:
+                await channel.send(f"{interaction.user.mention}\n" + "\n".join(report_lines))
         
     except ValueError as e:
-        await interaction.followup.send(f"❌ エラー: {str(e)}")
+        try:
+            await interaction.followup.send(f"❌ エラー: {str(e)}")
+        except discord.errors.HTTPException:
+            channel = interaction.channel
+            if channel:
+                await channel.send(f"{interaction.user.mention} ❌ エラー: {str(e)}")
     except Exception as e:
         import traceback
         error_detail = traceback.format_exc()
         print(f"❌ 予期しないエラー: {e}")
         print(error_detail)
-        await interaction.followup.send(f"❌ 予期しないエラーが発生しました: {str(e)}")
+        try:
+            await interaction.followup.send(f"❌ 予期しないエラーが発生しました: {str(e)}")
+        except discord.errors.HTTPException:
+            channel = interaction.channel
+            if channel:
+                await channel.send(f"{interaction.user.mention} ❌ 予期しないエラーが発生しました: {str(e)}")
 
 
 @bot.tree.command(name="emoji_info", description="サーバーの絵文字情報を表示します")
