@@ -18,7 +18,7 @@ load_dotenv()
 # 定数
 SUPPORTED_FORMATS = {'.png', '.jpg', '.jpeg', '.gif', '.webp'}
 MAX_EMOJI_SIZE = 256 * 1024  # 256KB
-MAX_EMOJIS_PER_ZIP = 50  # 一度に処理する最大絵文字数
+MAX_EMOJIS_PER_ZIP = 250  # 一度に処理する最大絵文字数（サーバー最大値）
 MAX_EMOJI_NAME_LENGTH = 32
 MIN_EMOJI_NAME_LENGTH = 2
 
