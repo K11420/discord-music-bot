@@ -581,9 +581,127 @@ async def slash_bot_stats(interaction: discord.Interaction):
 • ZIPファイルをチャンネルにアップロード（自動処理）
 • `/up_emoji` コマンドでZIPから登録
 • `/emoji_info` でサーバー情報を確認
+• `/delete_all_emojis` で全絵文字を削除（管理者のみ）
     """
     
     await interaction.response.send_message(stats_text)
+
+
+@bot.tree.command(name="delete_all_emojis", description="⚠️ サーバーの全絵文字を削除します（管理者のみ）")
+async def slash_delete_all_emojis(interaction: discord.Interaction):
+    """スラッシュコマンド: 全絵文字を削除"""
+    
+    guild = interaction.guild
+    if not guild:
+        await interaction.response.send_message("❌ このコマンドはサーバー内でのみ使用できます", ephemeral=True)
+        return
+    
+    # 管理者権限チェック
+    if not interaction.user.guild_permissions.administrator:
+        await interaction.response.send_message("❌ このコマンドは管理者のみ実行できます", ephemeral=True)
+        return
+    
+    # 絵文字数を確認
+    emoji_count = len(guild.emojis)
+    
+    if emoji_count == 0:
+        await interaction.response.send_message("ℹ️ サーバーに絵文字がありません", ephemeral=True)
+        return
+    
+    # 確認メッセージ
+    await interaction.response.send_message(
+        f"⚠️ **警告**: {emoji_count}個の絵文字をすべて削除しようとしています。\n"
+        f"この操作は取り消せません！\n\n"
+        f"続行するには、30秒以内に `/confirm_delete_all` コマンドを実行してください。",
+        ephemeral=True
+    )
+    
+    # 確認待ちフラグをセット（グローバル変数）
+    if not hasattr(bot, 'pending_deletions'):
+        bot.pending_deletions = {}
+    
+    import time
+    bot.pending_deletions[interaction.user.id] = {
+        'guild_id': guild.id,
+        'emoji_count': emoji_count,
+        'timestamp': time.time()
+    }
+
+
+@bot.tree.command(name="confirm_delete_all", description="全絵文字削除の確認")
+async def slash_confirm_delete_all(interaction: discord.Interaction):
+    """スラッシュコマンド: 削除確認"""
+    
+    guild = interaction.guild
+    if not guild:
+        await interaction.response.send_message("❌ このコマンドはサーバー内でのみ使用できます", ephemeral=True)
+        return
+    
+    # 管理者権限チェック
+    if not interaction.user.guild_permissions.administrator:
+        await interaction.response.send_message("❌ このコマンドは管理者のみ実行できます", ephemeral=True)
+        return
+    
+    # 確認待ちかチェック
+    if not hasattr(bot, 'pending_deletions') or interaction.user.id not in bot.pending_deletions:
+        await interaction.response.send_message("❌ 削除要求が見つかりません。先に `/delete_all_emojis` を実行してください。", ephemeral=True)
+        return
+    
+    pending = bot.pending_deletions[interaction.user.id]
+    
+    # ギルドIDチェック
+    if pending['guild_id'] != guild.id:
+        await interaction.response.send_message("❌ 別のサーバーで削除要求されています", ephemeral=True)
+        return
+    
+    # タイムアウトチェック（30秒）
+    import time
+    if time.time() - pending['timestamp'] > 30:
+        del bot.pending_deletions[interaction.user.id]
+        await interaction.response.send_message("❌ 削除要求がタイムアウトしました。もう一度 `/delete_all_emojis` を実行してください。", ephemeral=True)
+        return
+    
+    # 削除を実行
+    await interaction.response.defer()
+    
+    deleted_count = 0
+    failed_count = 0
+    
+    try:
+        await interaction.followup.send(f"🔄 {pending['emoji_count']}個の絵文字を削除中...")
+        
+        # 全絵文字を削除
+        for emoji in list(guild.emojis):
+            try:
+                await emoji.delete(reason=f"Deleted by {interaction.user.name}")
+                deleted_count += 1
+                print(f"🗑️  絵文字削除: {emoji.name}")
+                
+                # レート制限を避けるため少し待機
+                import asyncio
+                await asyncio.sleep(0.5)
+                
+            except Exception as e:
+                failed_count += 1
+                print(f"❌ 絵文字削除失敗 ({emoji.name}): {e}")
+        
+        # 結果を報告
+        result_text = f"""
+✅ **削除完了**
+
+**削除成功:** {deleted_count}個
+**削除失敗:** {failed_count}個
+**残り絵文字:** {len(guild.emojis)}個
+        """
+        
+        await interaction.followup.send(result_text)
+        
+        # 確認待ちを削除
+        del bot.pending_deletions[interaction.user.id]
+        
+    except Exception as e:
+        print(f"❌ 削除処理エラー: {e}")
+        await interaction.followup.send(f"❌ エラーが発生しました: {str(e)}\n削除済み: {deleted_count}個")
 
 
 def main():
