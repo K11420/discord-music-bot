@@ -25,7 +25,7 @@ MIN_EMOJI_NAME_LENGTH = 2
 # Botの設定
 intents = discord.Intents.default()
 intents.message_content = True
-intents.guild_emojis = True
+intents.emojis_and_stickers = True
 intents.guilds = True
 
 bot = commands.Bot(command_prefix='!', intents=intents)
