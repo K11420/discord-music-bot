@@ -244,7 +244,13 @@ async function registerServiceWorker() {
                 setTimeout(requestNotificationPermission, 3000);
             }
             
-            // Subscribe to push notifications after permission is granted
+            // Subscribe to push notifications - try immediately and after delay
+            // This handles cases where permission is already granted
+            if (Notification.permission === 'granted') {
+                await subscribeToPushNotifications(registration);
+            }
+            
+            // Also try after delay in case permission was just granted
             setTimeout(async () => {
                 if (Notification.permission === 'granted') {
                     await subscribeToPushNotifications(registration);
@@ -259,14 +265,18 @@ async function registerServiceWorker() {
 // Subscribe to Web Push API
 async function subscribeToPushNotifications(registration) {
     try {
+        console.log('🔔 Starting push notification subscription...');
+        
         // VAPID public key (server will provide this)
         const response = await fetch('/api/vapid-public-key');
         const { publicKey } = await response.json();
+        console.log('✅ Got VAPID public key:', publicKey.substring(0, 20) + '...');
         
         // Check if already subscribed
         let subscription = await registration.pushManager.getSubscription();
         
         if (!subscription) {
+            console.log('📱 Creating new push subscription...');
             // Subscribe to push notifications
             subscription = await registration.pushManager.subscribe({
                 userVisibleOnly: true,
@@ -276,9 +286,11 @@ async function subscribeToPushNotifications(registration) {
             console.log('✅ Subscribed to push notifications');
         } else {
             console.log('✅ Already subscribed to push notifications');
+            console.log('   Endpoint:', subscription.endpoint.substring(0, 50) + '...');
         }
         
         // Always send subscription to server (in case server restarted)
+        console.log('📤 Sending subscription to server...');
         const subscribeResponse = await fetch('/api/push-subscribe', {
             method: 'POST',
             headers: {
@@ -289,11 +301,14 @@ async function subscribeToPushNotifications(registration) {
         
         if (subscribeResponse.ok) {
             console.log('✅ Subscription sent to server');
+            const result = await subscribeResponse.json();
+            console.log('   Server response:', result);
         } else {
-            console.log('⚠️ Failed to send subscription to server');
+            console.log('⚠️ Failed to send subscription to server:', subscribeResponse.status);
         }
     } catch (error) {
-        console.log('⚠️ Push subscription error:', error);
+        console.log('❌ Push subscription error:', error.name, error.message);
+        console.error('Full error:', error);
     }
 }
 
