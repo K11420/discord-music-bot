@@ -597,10 +597,19 @@ setInterval(() => {
 // ============================================================================
 
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(__dirname, 'index-enhanced.html'));
 });
 
 app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin-enhanced.html'));
+});
+
+// Legacy routes (backward compatibility)
+app.get('/index.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/admin.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'admin.html'));
 });
 

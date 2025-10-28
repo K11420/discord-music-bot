@@ -1,18 +1,86 @@
-# 🎮 Minecraft Bedrock Server Website
+# 🎮 Minecraft Bedrock Server Website v3.0
 
-プロフェッショナルなマイクラサーバー管理Webサイト - リアルタイム監視機能付き
+プロフェッショナルなマイクラサーバー管理Webサイト - 完全拡張版 🚀
 
-## ✨ 機能
+## 🌟 バージョン 3.0 - 全機能実装完了！
 
-### 📱 公開サイト (https://minecraft.schale41.jp)
+**🔗 Cloudflare Tunnel URL**: `https://struck-focal-sides-lynn.trycloudflare.com`
+
+### 🆕 拡張版の新機能（v3.0）
+
+#### 1. 📊 **リアルタイム統計・グラフ**
+- Chart.js 4.5による美しいグラフ表示
+- プレイヤー数推移グラフ（24時間）
+- サーバーパフォーマンスグラフ（CPU/メモリ/TPS）
+- SQLiteデータベースによる統計データ永続化
+
+#### 2. 👥 **プレイヤーリスト表示**
+- リアルタイムオンラインプレイヤー表示
+- プレイヤーアバター表示（Crafatar統合）
+- プレイ時間、最終ログイン表示
+
+#### 3. 💬 **チャットログ表示**
+- リアルタイムチャット履歴（最大100件）
+- タイムスタンプ付き表示
+- プレイヤー/システムメッセージ識別
+
+#### 4. 🏆 **ランキングシステム**
+- プレイ時間ランキング
+- ブロック設置/破壊ランキング
+- 移動距離ランキング
+- トップ10表示
+
+#### 5. 📅 **イベントカレンダー**
+- イベント作成・管理機能（管理者）
+- イベント表示（公開ページ）
+- イベントタイプ分類（PvP, 建築, イベント, メンテナンス）
+
+#### 6. 📸 **スクリーンショットギャラリー**
+- 画像アップロード機能（最大10MB）
+- いいね機能
+- タイトル・説明文付き表示
+- レスポンシブグリッドレイアウト
+
+#### 7. 🔔 **ブラウザ通知**
+- サーバーオンライン/オフライン通知
+- イベント開始通知
+- ブラウザネイティブ通知API使用
+
+#### 8. ⚡ **クイックコマンドパネル**（管理者）
+- ワンクリックコマンド実行
+- 天気変更（晴れ/雨）
+- 時間変更（昼/夜）
+- モンスター削除
+- プレイヤー全回復
+- ゲームモード切替
+
+#### 9. 📊 **パフォーマンス監視**
+- CPU使用率リアルタイム表示
+- メモリ使用率リアルタイム表示
+- TPS（Ticks Per Second）表示
+- WebSocketによる3秒間隔更新
+
+#### 10. 🗺️ **マップビューワー** (今後実装予定)
+- Dynmap風のインタラクティブマップ
+- プレイヤー位置表示
+
+## ✨ 基本機能
+
+### 📱 公開サイト (`/`)
 - 🎨 美しいレスポンシブデザイン
 - 📊 **リアルタイムサーバー状態表示**
 - ⚡ WebSocket接続による即座の更新（3秒ごと）
 - 🎯 サーバー参加ガイド
 - 📋 ワンクリックIPコピー機能
 - 🌟 パーティクルアニメーション背景
+- 👥 オンラインプレイヤーリスト
+- 💬 チャットログ表示
+- 📊 統計グラフ
+- 🏆 ランキング表示
+- 📅 イベントカレンダー
+- 📸 スクリーンショットギャラリー
 
-### 🔐 管理パネル (https://minecraft.schale41.jp/admin)
+### 🔐 管理パネル (`/admin`)
 - 👨‍💼 管理者認証システム
 - 📊 **リアルタイム監視ダッシュボード**
   - プロセス状態（bedrock_server）
@@ -22,15 +90,16 @@
 - 🎮 サーバー制御
   - ワンクリック起動/停止/再起動
   - Screen セッション自動管理
-- ⚡ クイックコマンド
-  - プレイヤーリスト
-  - ワールド保存
-  - 時間/天気変更
-  - 難易度変更
+- ⚡ クイックコマンドパネル
+  - 天気/時間変更
+  - エンティティ管理
+  - プレイヤー管理
+  - ゲームモード切替
 - 💻 リアルタイムターミナル
   - コマンド送信
   - ログ表示
 - 📜 サーバーログビューア
+- 📅 イベント管理（作成/削除）
 
 ## 🚀 リアルタイム監視の仕組み
 
@@ -74,34 +143,113 @@ ADMIN_PASSWORD=your_secure_password node server.js
 
 ## 📊 API エンドポイント
 
-### GET /api/status
-サーバー状態を取得（リアルタイム）
+### 公開API（認証不要）
 
-レスポンス:
+#### GET /api/status
+サーバー状態を取得（リアルタイム）
 ```json
 {
   "online": true,
   "processRunning": true,
   "screenRunning": true,
   "portOpen": true,
-  "players": { "online": 0, "max": 10 },
+  "players": { "online": 0, "max": 10, "list": [] },
   "uptime": 3600,
+  "performance": { "cpu": 15.2, "memory": 12.5, "tps": 20.0 },
   "address": "schale41.jp",
   "port": 4096
 }
 ```
 
-### POST /api/server/start (要認証)
+#### GET /api/players/online
+オンラインプレイヤー取得
+```json
+{
+  "count": 2,
+  "players": ["Player1", "Player2"]
+}
+```
+
+#### GET /api/stats/server?hours=24
+サーバー統計取得
+```json
+{
+  "stats": [
+    {
+      "timestamp": "2025-10-28T10:00:00Z",
+      "online": true,
+      "player_count": 5,
+      "cpu_usage": 15.2,
+      "memory_usage": 12.5,
+      "tps": 20.0
+    }
+  ]
+}
+```
+
+#### GET /api/stats/players?type=total_playtime&limit=10
+プレイヤーランキング取得
+- type: `total_playtime` | `blocks_placed` | `blocks_broken` | `distance_traveled`
+- limit: 取得件数（デフォルト10）
+
+#### GET /api/chat/history?limit=50
+チャットログ取得
+
+#### GET /api/events?limit=10
+イベント一覧取得
+
+#### GET /api/screenshots?limit=20
+スクリーンショット一覧取得
+
+### 管理API（要認証）
+
+#### POST /api/login
+管理者ログイン
+```json
+{ "password": "admin123" }
+```
+
+#### POST /api/server/start
 サーバーを起動
 
-### POST /api/server/stop (要認証)
+#### POST /api/server/stop
 サーバーを停止
 
-### POST /api/server/command (要認証)
+#### POST /api/server/restart
+サーバーを再起動
+
+#### POST /api/server/command
 コマンドを送信
 ```json
 { "command": "list" }
 ```
+
+#### GET /api/commands/quick
+クイックコマンド一覧取得
+
+#### POST /api/events
+イベント作成
+```json
+{
+  "title": "PvPトーナメント",
+  "description": "優勝者にはダイヤ64個！",
+  "event_date": "2025-11-01T19:00:00Z",
+  "event_type": "pvp"
+}
+```
+
+#### DELETE /api/events/:id
+イベント削除
+
+#### POST /api/screenshots/upload
+スクリーンショットアップロード（multipart/form-data）
+- screenshot: 画像ファイル（最大10MB）
+- title: タイトル
+- description: 説明
+- uploader: アップロード者名
+
+#### POST /api/screenshots/:id/like
+スクリーンショットにいいね
 
 ## 🌐 WebSocket
 
@@ -135,38 +283,63 @@ wss://minecraft.schale41.jp (HTTPS)
 
 ## 🛠️ 起動方法
 
-### 開発環境
+### インストール
 ```bash
 cd /home/kbt0/webapp/minecraft-site
 npm install
-npm start
+```
+
+### 開発環境
+```bash
+npm start  # server-enhanced.js を起動
 ```
 
 ### 本番環境（現在の設定）
 ```bash
-PORT=3000 ADMIN_PASSWORD=admin123 node server.js
+PORT=3000 ADMIN_PASSWORD=admin123 node server-enhanced.js
 ```
 
-### Cloudflare Tunnel
+### Cloudflare Tunnel（HTTPS公開）
 ```bash
-cd /home/kbt0/webapp
-./cloudflared tunnel run face-ai
+# クイックトンネル（一時的）
+cloudflared tunnel --url http://localhost:3000
+
+# 現在のトンネルURL:
+# https://struck-focal-sides-lynn.trycloudflare.com
+```
+
+### 永続的トンネル（本番推奨）
+```bash
+# Cloudflareアカウントでトンネル作成
+cloudflared tunnel create minecraft-server
+cloudflared tunnel route dns minecraft-server minecraft.schale41.jp
+cloudflared tunnel run minecraft-server
 ```
 
 ## 📁 ファイル構成
 
 ```
 minecraft-site/
-├── index.html              # メインページ
-├── admin.html              # 管理パネル
-├── server.js               # Node.jsサーバー（WebSocket対応）
+├── index.html              # 基本メインページ
+├── index-enhanced.html     # 拡張版メインページ (デフォルト)
+├── admin.html              # 基本管理パネル
+├── admin-enhanced.html     # 拡張版管理パネル (デフォルト)
+├── server.js               # 基本Node.jsサーバー
+├── server-enhanced.js      # 拡張版サーバー（デフォルト）
+├── database.js             # SQLite3データベース管理
 ├── package.json
+├── data/
+│   └── minecraft.db        # SQLite3データベース
+├── uploads/
+│   └── screenshots/        # スクリーンショット保存先
 ├── css/
-│   ├── style.css          # メインスタイル
-│   └── admin.css          # 管理画面スタイル
+│   ├── style.css          # 基本スタイル
+│   ├── admin.css          # 基本管理画面スタイル
+│   └── enhanced.css       # 拡張版スタイル
 ├── js/
-│   ├── main.js            # メインJS（WebSocket接続）
-│   ├── admin.js           # 管理画面JS（リアルタイム更新）
+│   ├── main.js            # 基本JS
+│   ├── admin.js           # 基本管理画面JS
+│   ├── enhanced.js        # 拡張版JS（Chart.js統合）
 │   └── particles-config.js
 └── api/
     └── status.json
@@ -210,13 +383,29 @@ pm2 logs # (PM2使用時)
 | ポート状態 | `lsof -i :4096` | 3秒 |
 | 稼働時間 | プロセスの起動時間 | 3秒 |
 
+## 💾 データベース構造
+
+### SQLite3テーブル（6テーブル）
+
+1. **server_stats** - サーバー統計
+2. **player_sessions** - プレイヤーセッション
+3. **player_stats** - プレイヤー統計（ランキング用）
+4. **events** - イベントカレンダー
+5. **screenshots** - ギャラリー
+6. **chat_logs** - チャットログ
+
 ## 🎯 今後の改善案
 
-- [ ] プレイヤーリストの実際の取得
-- [ ] サーバーパフォーマンスグラフ
+- [x] プレイヤーリストの実装 ✅
+- [x] サーバーパフォーマンスグラフ ✅
+- [x] 統計・ランキングシステム ✅
+- [x] イベントカレンダー ✅
+- [x] スクリーンショットギャラリー ✅
+- [x] ブラウザ通知機能 ✅
 - [ ] 自動バックアップ機能
 - [ ] 通知機能（Discord連携）
 - [ ] モバイルアプリ対応
+- [ ] Dynmap風マップビューワー
 
 ## 📝 ライセンス
 
