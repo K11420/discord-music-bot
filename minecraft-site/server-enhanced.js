@@ -9,6 +9,8 @@ const fs = require('fs');
 const multer = require('multer');
 const moment = require('moment');
 const Database = require('./database');
+const webpush = require('web-push');
+require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
@@ -17,12 +19,31 @@ const wss = new WebSocket.Server({ server });
 const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
+// Configure Web Push
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:admin@minecraft.schale41.jp';
+
+if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
+    webpush.setVapidDetails(
+        VAPID_SUBJECT,
+        VAPID_PUBLIC_KEY,
+        VAPID_PRIVATE_KEY
+    );
+    console.log('✅ Web Push configured');
+} else {
+    console.log('⚠️ Web Push not configured - run: node public-push-setup.js');
+}
+
 // Initialize Database
 const db = new Database();
 
 // Store connected WebSocket clients
 const clients = new Set();
 const adminClients = new Set();
+
+// Store push subscriptions
+const pushSubscriptions = new Map();
 
 // Store current online players
 let onlinePlayers = [];
@@ -431,6 +452,18 @@ app.post('/api/events', requireAuth, (req, res) => {
                 }
             });
             
+            // Send push notification to all subscribers
+            sendPushNotification(
+                '🎉 新しいイベント',
+                `「${title}」が追加されました！\n📅 ${dateStr}`,
+                {
+                    eventId: result.id,
+                    eventTitle: title,
+                    eventDate: event_date,
+                    url: '/'
+                }
+            ).catch(err => console.log('Push notification error:', err));
+            
             // Also notify admins
             broadcastToAdmins({ type: 'event_created', event: { id: result.id, title, event_date } });
         })
@@ -664,6 +697,92 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log(`💾 Database initialized`);
     console.log(`📸 Screenshot uploads enabled`);
 });
+
+// Web Push Notification Endpoints
+
+// Get VAPID public key
+app.get('/api/vapid-public-key', (req, res) => {
+    if (!VAPID_PUBLIC_KEY) {
+        return res.status(500).json({ error: 'VAPID not configured' });
+    }
+    res.json({ publicKey: VAPID_PUBLIC_KEY });
+});
+
+// Subscribe to push notifications
+app.post('/api/push-subscribe', bodyParser.json(), (req, res) => {
+    const subscription = req.body;
+    
+    if (!subscription || !subscription.endpoint) {
+        return res.status(400).json({ error: 'Invalid subscription' });
+    }
+    
+    // Store subscription (using endpoint as key)
+    pushSubscriptions.set(subscription.endpoint, subscription);
+    
+    console.log('📱 New push subscription:', subscription.endpoint.substring(0, 50) + '...');
+    console.log(`   Total subscriptions: ${pushSubscriptions.size}`);
+    
+    res.json({ success: true, message: 'Subscribed to push notifications' });
+});
+
+// Unsubscribe from push notifications
+app.post('/api/push-unsubscribe', bodyParser.json(), (req, res) => {
+    const { endpoint } = req.body;
+    
+    if (endpoint && pushSubscriptions.has(endpoint)) {
+        pushSubscriptions.delete(endpoint);
+        console.log('📱 Unsubscribed:', endpoint.substring(0, 50) + '...');
+    }
+    
+    res.json({ success: true });
+});
+
+// Function to send push notification to all subscribers
+async function sendPushNotification(title, body, data = {}) {
+    if (!VAPID_PUBLIC_KEY || pushSubscriptions.size === 0) {
+        return;
+    }
+    
+    const payload = JSON.stringify({
+        title: title,
+        body: body,
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
+        data: data,
+        timestamp: Date.now()
+    });
+    
+    console.log(`📢 Sending push notification to ${pushSubscriptions.size} subscribers`);
+    
+    const promises = [];
+    const failedSubscriptions = [];
+    
+    for (const [endpoint, subscription] of pushSubscriptions.entries()) {
+        promises.push(
+            webpush.sendNotification(subscription, payload)
+                .then(() => {
+                    console.log(`   ✅ Sent to: ${endpoint.substring(0, 50)}...`);
+                })
+                .catch(error => {
+                    console.log(`   ❌ Failed: ${endpoint.substring(0, 50)}... (${error.message})`);
+                    // 410 Gone means subscription expired
+                    if (error.statusCode === 410) {
+                        failedSubscriptions.push(endpoint);
+                    }
+                })
+        );
+    }
+    
+    await Promise.all(promises);
+    
+    // Remove failed subscriptions
+    failedSubscriptions.forEach(endpoint => {
+        pushSubscriptions.delete(endpoint);
+        console.log(`   🗑️ Removed expired subscription: ${endpoint.substring(0, 50)}...`);
+    });
+    
+    console.log(`✅ Push notification sent successfully`);
+}
 
 // Graceful shutdown
 process.on('SIGINT', () => {

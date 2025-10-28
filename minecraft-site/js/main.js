@@ -243,10 +243,70 @@ async function registerServiceWorker() {
             if ('Notification' in window && Notification.permission === 'default') {
                 setTimeout(requestNotificationPermission, 3000);
             }
+            
+            // Subscribe to push notifications after permission is granted
+            setTimeout(async () => {
+                if (Notification.permission === 'granted') {
+                    await subscribeToPushNotifications(registration);
+                }
+            }, 5000);
         } catch (error) {
             console.log('⚠️ Service Worker registration failed:', error);
         }
     }
+}
+
+// Subscribe to Web Push API
+async function subscribeToPushNotifications(registration) {
+    try {
+        // VAPID public key (server will provide this)
+        const response = await fetch('/api/vapid-public-key');
+        const { publicKey } = await response.json();
+        
+        // Check if already subscribed
+        let subscription = await registration.pushManager.getSubscription();
+        
+        if (!subscription) {
+            // Subscribe to push notifications
+            subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(publicKey)
+            });
+            
+            console.log('✅ Subscribed to push notifications');
+            
+            // Send subscription to server
+            await fetch('/api/push-subscribe', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(subscription)
+            });
+            
+            console.log('✅ Subscription sent to server');
+        } else {
+            console.log('✅ Already subscribed to push notifications');
+        }
+    } catch (error) {
+        console.log('⚠️ Push subscription error:', error);
+    }
+}
+
+// Convert VAPID key from base64 to Uint8Array
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+        .replace(/\-/g, '+')
+        .replace(/_/g, '/');
+    
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
 }
 
 // Request notification permission

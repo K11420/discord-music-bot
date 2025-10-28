@@ -1,5 +1,5 @@
-// Service Worker for Push Notifications
-const CACHE_NAME = 'bedrock-server-v3.2.0';
+// Service Worker for Push Notifications with Web Push API
+const CACHE_NAME = 'bedrock-server-v3.3.0';
 const urlsToCache = [
     '/',
     '/admin',
@@ -107,21 +107,41 @@ self.addEventListener('fetch', event => {
     );
 });
 
-// Push event (for notifications)
+// Push event (for Web Push API notifications)
 self.addEventListener('push', event => {
-    console.log('Service Worker: Push received');
+    console.log('🔔 Service Worker: Push notification received');
     
-    const options = {
-        body: event.data ? event.data.text() : 'New notification',
-        icon: '/icon-192.png',
-        badge: '/icon-192.png',
-        vibrate: [200, 100, 200],
-        tag: 'bedrock-notification',
-        requireInteraction: false
+    let notificationData = {
+        title: 'Bedrock Server',
+        body: 'New notification',
+        icon: '/icon-192.png'
     };
     
+    // Parse notification data
+    if (event.data) {
+        try {
+            const data = event.data.json();
+            notificationData = {
+                title: data.title || notificationData.title,
+                body: data.body || data.message || notificationData.body,
+                icon: data.icon || notificationData.icon,
+                badge: '/icon-192.png',
+                vibrate: [200, 100, 200],
+                tag: 'event-notification',
+                requireInteraction: false,
+                data: {
+                    url: data.url || '/',
+                    eventId: data.eventId
+                }
+            };
+        } catch (error) {
+            console.log('Error parsing push data:', error);
+            notificationData.body = event.data.text();
+        }
+    }
+    
     event.waitUntil(
-        self.registration.showNotification('Bedrock Server', options)
+        self.registration.showNotification(notificationData.title, notificationData)
     );
 });
 
