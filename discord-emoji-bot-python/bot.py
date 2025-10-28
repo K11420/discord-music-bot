@@ -731,6 +731,115 @@ async def slash_confirm_delete_all(interaction: discord.Interaction):
         await interaction.followup.send(f"❌ エラーが発生しました: {str(e)}\n削除済み: {deleted_count}個")
 
 
+@bot.tree.command(name="clean_emoji_names", description="⚙️ 絵文字名をクリーニング（ID等を削除）")
+async def slash_clean_emoji_names(interaction: discord.Interaction):
+    """スラッシュコマンド: 絵文字名をクリーニング"""
+    
+    guild = interaction.guild
+    if not guild:
+        await interaction.response.send_message("❌ このコマンドはサーバー内でのみ使用できます", ephemeral=True)
+        return
+    
+    # 管理者権限チェック
+    if not interaction.user.guild_permissions.administrator:
+        await interaction.response.send_message("❌ このコマンドは管理者のみ実行できます", ephemeral=True)
+        return
+    
+    await interaction.response.defer()
+    
+    # 現在の絵文字を取得
+    emojis = list(guild.emojis)
+    
+    if not emojis:
+        await interaction.followup.send("ℹ️ サーバーに絵文字がありません")
+        return
+    
+    await interaction.followup.send(f"🔄 {len(emojis)}個の絵文字名をクリーニング中...")
+    
+    renamed_count = 0
+    skipped_count = 0
+    failed_count = 0
+    rename_log = []
+    
+    try:
+        for emoji in emojis:
+            old_name = emoji.name
+            
+            # 新しい名前を生成（sanitize_emoji_nameを使用）
+            # ファイル名として扱うため、拡張子を追加
+            new_name = sanitize_emoji_name(f"{old_name}.png")
+            
+            # 名前が変わらない場合はスキップ
+            if new_name == old_name or not new_name:
+                skipped_count += 1
+                continue
+            
+            # 既存の絵文字と名前が重複しないかチェック
+            existing = discord.utils.get(guild.emojis, name=new_name)
+            if existing and existing.id != emoji.id:
+                # 重複する場合は番号を付加
+                counter = 1
+                temp_name = new_name
+                while existing and existing.id != emoji.id:
+                    temp_name = f"{new_name}_{counter}"
+                    existing = discord.utils.get(guild.emojis, name=temp_name)
+                    counter += 1
+                new_name = temp_name
+            
+            try:
+                # 絵文字をリネーム
+                await emoji.edit(name=new_name, reason=f"Name cleaned by {interaction.user.name}")
+                renamed_count += 1
+                rename_log.append(f"`{old_name}` → `{new_name}`")
+                print(f"✏️  絵文字リネーム: {old_name} → {new_name}")
+                
+                # レート制限を避けるため待機
+                import asyncio
+                await asyncio.sleep(1)
+                
+            except discord.HTTPException as e:
+                failed_count += 1
+                print(f"❌ 絵文字リネーム失敗 ({old_name}): {e}")
+        
+        # 結果を報告
+        result_lines = [
+            "✅ **クリーニング完了**",
+            "",
+            f"**リネーム成功:** {renamed_count}個",
+            f"**変更不要:** {skipped_count}個",
+            f"**失敗:** {failed_count}個",
+        ]
+        
+        if rename_log:
+            result_lines.append("")
+            result_lines.append("**変更内容（最初の10件）:**")
+            for log in rename_log[:10]:
+                result_lines.append(log)
+            if len(rename_log) > 10:
+                result_lines.append(f"...他{len(rename_log) - 10}件")
+        
+        result_text = "\n".join(result_lines)
+        
+        # 結果を送信（15分制限対策）
+        try:
+            await interaction.followup.send(result_text)
+        except discord.errors.HTTPException:
+            channel = interaction.channel
+            if channel:
+                await channel.send(f"{interaction.user.mention}\n{result_text}")
+        
+    except Exception as e:
+        import traceback
+        print(f"❌ クリーニング処理エラー: {e}")
+        print(traceback.format_exc())
+        try:
+            await interaction.followup.send(f"❌ エラーが発生しました: {str(e)}\nリネーム済み: {renamed_count}個")
+        except discord.errors.HTTPException:
+            channel = interaction.channel
+            if channel:
+                await channel.send(f"{interaction.user.mention} ❌ エラーが発生しました: {str(e)}\nリネーム済み: {renamed_count}個")
+
+
 def main():
     """メイン関数"""
     # トークンを取得
