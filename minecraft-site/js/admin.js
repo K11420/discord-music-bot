@@ -100,30 +100,67 @@ async function updateServerStatus() {
 
 // Update realtime status from WebSocket or HTTP
 function updateRealtimeStatus(data) {
-    // Update status indicator
+    // Update header status (enhanced version)
+    const headerStatus = document.getElementById('header-status');
+    if (headerStatus) {
+        if (data.online) {
+            headerStatus.textContent = '🟢 オンライン';
+            headerStatus.style.color = '#4CAF50';
+        } else {
+            headerStatus.textContent = '🔴 オフライン';
+            headerStatus.style.color = '#F44336';
+        }
+    }
+    
+    // Update status indicator (old version)
     const indicator = document.getElementById('status-indicator');
     const statusText = document.getElementById('server-status');
     
-    if (data.online) {
-        indicator.className = 'status-indicator online';
-        statusText.textContent = '🟢 オンライン';
-        statusText.style.color = '#4CAF50';
-    } else {
-        indicator.className = 'status-indicator offline';
-        statusText.textContent = '🔴 オフライン';
-        statusText.style.color = '#F44336';
+    if (indicator && statusText) {
+        if (data.online) {
+            indicator.className = 'status-indicator online';
+            statusText.textContent = '🟢 オンライン';
+            statusText.style.color = '#4CAF50';
+        } else {
+            indicator.className = 'status-indicator offline';
+            statusText.textContent = '🔴 オフライン';
+            statusText.style.color = '#F44336';
+        }
     }
     
-    // Update stats
-    document.getElementById('online-players').textContent = data.players.online;
-    document.getElementById('max-players').textContent = `${data.players.max}人`;
+    // Update status info (enhanced version)
+    const processStatus = document.getElementById('process-status');
+    const portStatus = document.getElementById('port-status');
+    const screenStatus = document.getElementById('screen-status');
     
-    const hours = Math.floor(data.uptime / 3600);
-    const minutes = Math.floor((data.uptime % 3600) / 60);
-    document.getElementById('uptime').textContent = `${hours}h ${minutes}m`;
+    if (processStatus) {
+        processStatus.textContent = data.processRunning ? '✅ 起動中' : '❌ 停止中';
+    }
+    if (portStatus) {
+        portStatus.textContent = data.portOpen ? '✅ OPEN' : '❌ CLOSED';
+    }
+    if (screenStatus) {
+        screenStatus.textContent = data.screenRunning ? '✅ 接続中' : '❌ 切断';
+    }
     
-    document.getElementById('screen-session').textContent = data.screenSession || '-';
-    document.getElementById('server-address').textContent = `${data.address}:${data.port}`;
+    // Update stats (old version)
+    const onlinePlayers = document.getElementById('online-players');
+    const maxPlayers = document.getElementById('max-players');
+    const uptimeEl = document.getElementById('uptime');
+    const screenSession = document.getElementById('screen-session');
+    const serverAddress = document.getElementById('server-address');
+    
+    if (onlinePlayers) onlinePlayers.textContent = data.players?.online || 0;
+    if (maxPlayers) maxPlayers.textContent = `${data.players?.max || 10}人`;
+    
+    if (data.uptime !== undefined && uptimeEl) {
+        const hours = Math.floor(data.uptime / 3600);
+        const minutes = Math.floor((data.uptime % 3600) / 60);
+        uptimeEl.textContent = `${hours}h ${minutes}m`;
+    }
+    
+    if (screenSession) screenSession.textContent = data.screenSession || '-';
+    if (serverAddress) serverAddress.textContent = `${data.address}:${data.port}`;
     
     // Log detailed status
     console.log('Real-time status:', {
@@ -131,9 +168,13 @@ function updateRealtimeStatus(data) {
         process: data.processRunning,
         screen: data.screenRunning,
         port: data.portOpen,
-        uptime: data.uptime
+        uptime: data.uptime,
+        players: data.players
     });
 }
+
+// Make it globally accessible
+window.updateStatus = updateRealtimeStatus;
 
 // Server control functions
 async function startServer() {
@@ -269,16 +310,25 @@ async function refreshLogs() {
         const data = await response.json();
         
         if (data.logs) {
-            document.getElementById('server-logs').textContent = data.logs;
+            // Support both old and new element IDs
+            const logsElement = document.getElementById('logs-output') || document.getElementById('server-logs');
+            if (logsElement) {
+                logsElement.textContent = data.logs;
+            }
             
             // Auto scroll
             const logsContainer = document.getElementById('logs-container');
-            logsContainer.scrollTop = logsContainer.scrollHeight;
+            if (logsContainer) {
+                logsContainer.scrollTop = logsContainer.scrollHeight;
+            }
         }
     } catch (error) {
         console.error('Failed to load logs:', error);
     }
 }
+
+// Alias for compatibility
+window.loadLogs = refreshLogs;
 
 // WebSocket connection
 function connectWebSocket() {
