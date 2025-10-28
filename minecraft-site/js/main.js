@@ -232,8 +232,60 @@ if (mobileMenuToggle) {
 
 // Removed intersection observer for performance
 
+// Register Service Worker for PWA notifications
+async function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        try {
+            const registration = await navigator.serviceWorker.register('/service-worker.js');
+            console.log('✅ Service Worker registered:', registration.scope);
+            
+            // Request notification permission after Service Worker is ready
+            if ('Notification' in window && Notification.permission === 'default') {
+                setTimeout(requestNotificationPermission, 3000);
+            }
+        } catch (error) {
+            console.log('⚠️ Service Worker registration failed:', error);
+        }
+    }
+}
+
+// Request notification permission
+async function requestNotificationPermission() {
+    if (!('Notification' in window)) {
+        console.log('❌ This browser does not support notifications');
+        return;
+    }
+    
+    if (Notification.permission === 'granted') {
+        console.log('✅ Notification permission already granted');
+        return;
+    }
+    
+    if (Notification.permission !== 'denied') {
+        try {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                console.log('✅ Notification permission granted');
+                // Show welcome notification
+                new Notification('🎉 通知が有効になりました', {
+                    body: 'イベントが作成されると通知が届きます',
+                    icon: '/icon-192.png',
+                    badge: '/icon-192.png'
+                });
+            } else {
+                console.log('⚠️ Notification permission denied');
+            }
+        } catch (error) {
+            console.log('⚠️ Notification permission request error:', error);
+        }
+    }
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    // Register Service Worker
+    registerServiceWorker();
+    
     // Check server status on load
     checkServerStatus();
     

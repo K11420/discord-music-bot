@@ -40,7 +40,7 @@ async function addTestData() {
         
         for (const player of players) {
             await db.updatePlayerStats(player.name, {
-                total_playtime: player.playtime,
+                playtime: player.playtime,  // Changed from total_playtime to playtime
                 blocks_placed: player.blocks_placed,
                 blocks_broken: player.blocks_broken,
                 distance_traveled: player.distance

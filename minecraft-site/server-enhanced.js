@@ -528,12 +528,15 @@ function broadcastToAdmins(data) {
 // Broadcast to all connected clients (public users)
 function broadcastToAll(data) {
     const message = JSON.stringify(data);
+    console.log(`📢 Broadcasting to ${clients.size} clients, type: ${data.type}`);
+    let sentCount = 0;
     clients.forEach(client => {
         if (client.readyState === WebSocket.OPEN) {
             client.send(message);
+            sentCount++;
         }
     });
-    console.log('📢 Broadcast to all clients:', data.type);
+    console.log(`✅ Broadcast complete: sent to ${sentCount} clients`);
 }
 
 wss.on('connection', (ws, req) => {

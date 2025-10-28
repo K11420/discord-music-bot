@@ -539,8 +539,9 @@ async function loadRankings() {
 function formatRankingValue(type, value) {
     switch (type) {
         case 'total_playtime':
-            const hours = Math.floor(value / 3600);
-            const minutes = Math.floor((value % 3600) / 60);
+            // Value is in milliseconds, convert to hours and minutes
+            const hours = Math.floor(value / 3600000);
+            const minutes = Math.floor((value % 3600000) / 60000);
             return `${hours}h ${minutes}m`;
         case 'distance_traveled':
             return `${(value / 1000).toFixed(1)} km`;
