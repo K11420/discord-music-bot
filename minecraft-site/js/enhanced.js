@@ -37,6 +37,12 @@ function setupNotificationButton() {
     const btn = document.getElementById('notificationBtn');
     if (!btn) return;
     
+    // Check if notifications are supported
+    if (typeof Notification === 'undefined') {
+        btn.style.display = 'none';
+        return;
+    }
+    
     // Check if notifications are already enabled
     if (Notification.permission === 'granted') {
         btn.textContent = '🔔 通知有効';
@@ -49,22 +55,30 @@ function setupNotificationButton() {
             return;
         }
         
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-            btn.textContent = '🔔 通知有効';
-            btn.disabled = true;
-            showNotification('通知が有効になりました', 'サーバーの状態変更を通知します');
+        try {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                btn.textContent = '🔔 通知有効';
+                btn.disabled = true;
+                showNotification('通知が有効になりました', 'サーバーの状態変更を通知します');
+            }
+        } catch (error) {
+            console.log('Notification permission error:', error);
         }
     });
 }
 
 function showNotification(title, body) {
-    if (Notification.permission === 'granted') {
-        new Notification(title, {
-            body: body,
-            icon: '/favicon.ico',
-            badge: '/favicon.ico'
-        });
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        try {
+            new Notification(title, {
+                body: body,
+                icon: '/favicon.ico',
+                badge: '/favicon.ico'
+            });
+        } catch (error) {
+            console.log('Notification error:', error);
+        }
     }
 }
 
@@ -77,10 +91,12 @@ function checkServerStatusChange(newStatus) {
     }
     
     if (lastServerStatus !== newStatus) {
-        if (newStatus) {
-            showNotification('サーバーがオンラインになりました', '今すぐ参加できます！');
-        } else {
-            showNotification('サーバーがオフラインになりました', 'メンテナンス中の可能性があります');
+        if (typeof Notification !== 'undefined') {
+            if (newStatus) {
+                showNotification('サーバーがオンラインになりました', '今すぐ参加できます！');
+            } else {
+                showNotification('サーバーがオフラインになりました', 'メンテナンス中の可能性があります');
+            }
         }
         lastServerStatus = newStatus;
     }

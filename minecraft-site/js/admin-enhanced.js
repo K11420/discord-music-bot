@@ -177,9 +177,13 @@ function showAdminNotification(title, message, type = 'info') {
         setTimeout(() => notification.remove(), 300);
     }, 5000);
     
-    // Browser notification
-    if (Notification.permission === 'granted') {
-        new Notification(title, { body: message });
+    // Browser notification (check if supported)
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        try {
+            new Notification(title, { body: message });
+        } catch (e) {
+            console.log('Browser notification not available');
+        }
     }
 }
 
