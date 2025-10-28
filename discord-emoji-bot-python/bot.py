@@ -71,6 +71,16 @@ def sanitize_emoji_name(filename: str) -> str:
     # 拡張子を除去
     name = Path(filename).stem
     
+    # アンダースコア＋長い数字列（13桁以上のID）を削除
+    # 例: emoji_1335260017632481320 → emoji
+    name = re.sub(r'_\d{13,}', '', name)
+    
+    # 末尾の_数字（短い数字）を削除
+    # 例: emoji_101 → emoji
+    # 注意: 数字のみの名前は保持（例: 161 → 161）
+    if not name.isdigit():
+        name = re.sub(r'_\d+$', '', name)
+    
     # 英数字とアンダースコア以外を除去または置換
     name = re.sub(r'[^a-zA-Z0-9_]', '_', name)
     
