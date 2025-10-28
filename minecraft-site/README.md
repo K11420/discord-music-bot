@@ -4,7 +4,8 @@
 
 ## 🌟 バージョン 3.0 - 全機能実装完了！
 
-**🔗 Cloudflare Tunnel URL**: `https://struck-focal-sides-lynn.trycloudflare.com`
+**🔗 カスタムドメイン**: `https://minecraft.schale41.jp`  
+**🔗 一時URL**: `https://struck-focal-sides-lynn.trycloudflare.com` (バックアップ)
 
 ### 🆕 拡張版の新機能（v3.0）
 

@@ -10,19 +10,24 @@
 
 ## 🌐 アクセスURL
 
-### Cloudflare Tunnel (HTTPS - 推奨)
+### 🌟 カスタムドメイン (HTTPS - 推奨)
+```
+https://minecraft.schale41.jp
+```
+
+### 🔗 一時Cloudflare Tunnel (HTTPS - バックアップ)
 ```
 https://struck-focal-sides-lynn.trycloudflare.com
 ```
 
-### 直接アクセス (HTTP)
+### 🔌 直接アクセス (HTTP)
 ```
 http://106.73.68.66:3000
 ```
 
-### 管理画面
+### 🔐 管理画面
 ```
-https://struck-focal-sides-lynn.trycloudflare.com/admin
+https://minecraft.schale41.jp/admin
 ```
 
 **管理者パスワード**: `admin123`
