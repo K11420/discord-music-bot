@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理画面 - Bedrock Server</title>
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/admin-enhanced.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="login-screen" class="login-screen">
+        <div class="login-container">
+            <h1>🔐 管理者ログイン</h1>
+            <form id="login-form">
+                <input type="password" id="password-input" placeholder="パスワードを入力" required>
+                <button type="submit" class="btn btn-primary">ログイン</button>
+            </form>
+            <p class="login-error" id="login-error"></p>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="admin-dashboard" class="admin-dashboard" style="display: none;">
+        <!-- Header -->
+        <header class="admin-header">
+            <div class="header-left">
+                <h1>⛏️ Bedrock Server 管理画面</h1>
+            </div>
+            <div class="header-right">
+                <span class="header-status" id="header-status">確認中...</span>
+                <button class="btn btn-logout" onclick="logout()">ログアウト</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="admin-content">
+            <!-- Server Controls -->
+            <div class="control-panel">
+                <h2>サーバー制御</h2>
+                <div class="control-buttons">
+                    <button class="btn btn-success" onclick="startServer()">
+                        ▶️ 起動
+                    </button>
+                    <button class="btn btn-danger" onclick="stopServer()">
+                        ⏹️ 停止
+                    </button>
+                    <button class="btn btn-warning" onclick="restartServer()">
+                        🔄 再起動
+                    </button>
+                </div>
+                <div class="status-info" id="status-info">
+                    <div class="status-item">
+                        <span class="status-label">プロセス:</span>
+                        <span class="status-value" id="process-status">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">ポート:</span>
+                        <span class="status-value" id="port-status">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Screen:</span>
+                        <span class="status-value" id="screen-status">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Commands -->
+            <div class="quick-commands-panel">
+                <h2>クイックコマンド</h2>
+                <div id="quick-commands" class="quick-commands-grid">
+                    <div class="loading">コマンドを読み込み中...</div>
+                </div>
+            </div>
+
+            <!-- Event Management -->
+            <div class="event-management-panel">
+                <h2>イベント管理</h2>
+                <div class="event-form">
+                    <input type="text" id="event-title" placeholder="イベント名" class="form-input">
+                    <input type="datetime-local" id="event-date" class="form-input">
+                    <select id="event-type" class="form-input">
+                        <option value="general">一般</option>
+                        <option value="maintenance">メンテナンス</option>
+                        <option value="event">イベント</option>
+                        <option value="update">アップデート</option>
+                    </select>
+                    <textarea id="event-description" placeholder="説明" class="form-input" rows="2"></textarea>
+                    <button class="btn btn-primary" onclick="createEvent()">イベント作成</button>
+                </div>
+            </div>
+
+            <!-- Custom Command -->
+            <div class="command-panel">
+                <h2>カスタムコマンド</h2>
+                <div class="command-input-group">
+                    <input type="text" id="command-input" placeholder="コマンドを入力..." class="command-input">
+                    <button class="btn btn-primary" onclick="sendCommand()">送信</button>
+                </div>
+            </div>
+
+            <!-- Server Logs -->
+            <div class="logs-panel">
+                <h2>サーバーログ</h2>
+                <div class="logs-container" id="logs-container">
+                    <pre id="logs-output">ログを読み込み中...</pre>
+                </div>
+            </div>
+
+            <!-- Statistics Overview -->
+            <div class="stats-overview">
+                <h2>統計概要</h2>
+                <div class="stats-cards">
+                    <div class="stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-info">
+                            <span class="stat-label">オンラインプレイヤー</span>
+                            <span class="stat-value" id="admin-online-players">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⏱️</div>
+                        <div class="stat-info">
+                            <span class="stat-label">稼働時間</span>
+                            <span class="stat-value" id="admin-uptime">0h</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">💻</div>
+                        <div class="stat-info">
+                            <span class="stat-label">CPU使用率</span>
+                            <span class="stat-value" id="admin-cpu">0%</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🧠</div>
+                        <div class="stat-info">
+                            <span class="stat-label">メモリ使用率</span>
+                            <span class="stat-value" id="admin-memory">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/admin.js"></script>
+    <script src="js/admin-enhanced.js"></script>
+</body>
+</html>

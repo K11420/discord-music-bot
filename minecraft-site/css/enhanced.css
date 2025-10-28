@@ -1,0 +1,469 @@
+/* Enhanced Features CSS */
+
+/* Players Section */
+.players-section {
+    background: rgba(10, 14, 20, 0.5);
+}
+
+.players-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.player-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.player-card:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-5px);
+}
+
+.player-avatar {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+}
+
+.player-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.player-status {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.no-players {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+}
+
+/* Statistics Section */
+.stats-section {
+    background: rgba(15, 20, 30, 0.7);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.stat-chart-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 2rem;
+}
+
+.stat-chart-card h3 {
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+    font-size: 1.2rem;
+}
+
+.stat-chart-card canvas {
+    max-height: 300px;
+}
+
+.performance-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.metric-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.metric-icon {
+    font-size: 2.5rem;
+}
+
+.metric-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.metric-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.3rem;
+}
+
+.metric-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+/* Chat Section */
+.chat-section {
+    background: rgba(10, 14, 20, 0.5);
+}
+
+.chat-container {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.chat-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.chat-message {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.8rem 1rem;
+    border-radius: 8px;
+    border-left: 3px solid var(--primary-color);
+}
+
+.chat-timestamp {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-right: 0.5rem;
+}
+
+.chat-player {
+    font-weight: 600;
+    color: var(--accent-color);
+    margin-right: 0.5rem;
+}
+
+.chat-text {
+    color: var(--text-primary);
+}
+
+.chat-system {
+    border-left-color: var(--accent-color);
+}
+
+.chat-loading {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+}
+
+/* Gallery Section */
+.gallery-section {
+    background: rgba(15, 20, 30, 0.7);
+}
+
+.gallery-upload {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.gallery-item {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.gallery-item:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-5px);
+}
+
+.gallery-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.gallery-info {
+    padding: 1rem;
+}
+
+.gallery-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.gallery-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.gallery-likes {
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.gallery-likes:hover {
+    color: var(--accent-color);
+}
+
+.gallery-loading {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-secondary);
+}
+
+/* Events Section */
+.events-section {
+    background: rgba(10, 14, 20, 0.5);
+}
+
+.events-grid {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.event-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+    transition: all 0.3s ease;
+}
+
+.event-card:hover {
+    border-color: var(--primary-color);
+}
+
+.event-date {
+    min-width: 80px;
+    text-align: center;
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    padding: 1rem;
+    border-radius: 8px;
+}
+
+.event-day {
+    font-size: 2rem;
+    font-weight: 700;
+    display: block;
+}
+
+.event-month {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.event-details {
+    flex: 1;
+}
+
+.event-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.event-description {
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.event-type {
+    display: inline-block;
+    padding: 0.3rem 0.8rem;
+    background: rgba(76, 175, 80, 0.2);
+    color: var(--primary-color);
+    border-radius: 20px;
+    font-size: 0.8rem;
+    margin-top: 0.5rem;
+}
+
+.events-loading {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-secondary);
+}
+
+/* Rankings Section */
+.rankings-section {
+    background: rgba(15, 20, 30, 0.7);
+}
+
+.rankings-tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.tab-btn {
+    padding: 0.8rem 1.5rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+    border-color: var(--primary-color);
+}
+
+.tab-btn.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.rankings-table {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.ranking-item {
+    display: grid;
+    grid-template-columns: 60px 1fr auto;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.3s ease;
+}
+
+.ranking-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.ranking-item:last-child {
+    border-bottom: none;
+}
+
+.ranking-position {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.ranking-position.top-1 {
+    color: #FFD700;
+}
+
+.ranking-position.top-2 {
+    color: #C0C0C0;
+}
+
+.ranking-position.top-3 {
+    color: #CD7F32;
+}
+
+.ranking-player {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.ranking-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.rankings-loading {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-secondary);
+}
+
+/* Notification Button */
+.btn-outline {
+    background: transparent;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+}
+
+.btn-outline:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-chart-card canvas {
+        max-height: 250px;
+    }
+    
+    .performance-metrics {
+        grid-template-columns: 1fr;
+    }
+    
+    .players-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+    
+    .gallery-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+    
+    .event-card {
+        flex-direction: column;
+    }
+    
+    .rankings-tabs {
+        flex-direction: column;
+    }
+    
+    .ranking-item {
+        grid-template-columns: 50px 1fr;
+        gap: 1rem;
+    }
+    
+    .ranking-value {
+        grid-column: 2;
+        text-align: right;
+    }
+}
