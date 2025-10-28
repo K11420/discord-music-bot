@@ -48,7 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const password = document.getElementById('password').value;
+            const passwordInput = document.getElementById('password-input') || document.getElementById('password');
+            const password = passwordInput ? passwordInput.value : '';
             const errorDiv = document.getElementById('login-error');
             
             try {
