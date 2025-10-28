@@ -43,10 +43,14 @@ async function executeQuickCommand(command) {
 
 // Event management
 async function createEvent() {
+    console.log('📅 createEvent() called');
+    
     const title = document.getElementById('event-title').value;
     const date = document.getElementById('event-date').value;
     const type = document.getElementById('event-type').value;
     const description = document.getElementById('event-description').value;
+    
+    console.log('Form values:', { title, date, type, description });
     
     if (!title || !date) {
         alert('イベント名と日時を入力してください');
@@ -65,17 +69,26 @@ async function createEvent() {
             })
         });
         
+        const data = await response.json();
+        console.log('Response:', response.status, data);
+        
         if (response.ok) {
-            showNotification('成功', 'イベントを作成しました');
+            alert('✅ イベントを作成しました！');
             // Clear form
             document.getElementById('event-title').value = '';
             document.getElementById('event-date').value = '';
             document.getElementById('event-description').value = '';
+            
+            // Reload events on public page if available
+            if (typeof loadEvents === 'function') {
+                loadEvents();
+            }
         } else {
-            showNotification('エラー', 'イベントの作成に失敗しました');
+            alert('❌ イベントの作成に失敗しました: ' + (data.error || 'Unknown error'));
         }
     } catch (error) {
-        console.error('Event creation error:', error);
+        console.error('❌ Event creation error:', error);
+        alert('❌ エラーが発生しました: ' + error.message);
     }
 }
 
@@ -138,5 +151,9 @@ if (originalUpdateStatus) {
         updateAdminStats(data);
     };
 }
+
+// Expose functions to global scope for onclick handlers
+window.createEvent = createEvent;
+window.executeQuickCommand = executeQuickCommand;
 
 console.log('✅ Enhanced admin features loaded');
