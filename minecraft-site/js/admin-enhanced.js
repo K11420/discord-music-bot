@@ -94,6 +94,9 @@ async function createEvent() {
             dateEl.value = '';
             descriptionEl.value = '';
             
+            // Reload admin events list
+            loadAdminEvents();
+            
             // Reload events on public page if available
             if (typeof loadEvents === 'function') {
                 loadEvents();
@@ -152,7 +155,7 @@ function updateAdminStats(data) {
 
 // Enhanced notification function with custom UI
 function showAdminNotification(title, message, type = 'info') {
-    console.log(`[${title}] ${message}`);
+    console.log(`🔔 Notification: [${title}] ${message} (type: ${type})`);
     
     // Create notification element
     const notification = document.createElement('div');
@@ -167,22 +170,30 @@ function showAdminNotification(title, message, type = 'info') {
     
     // Add to body
     document.body.appendChild(notification);
+    console.log('✅ Notification element added to body');
     
     // Trigger animation
-    setTimeout(() => notification.classList.add('show'), 10);
+    setTimeout(() => {
+        notification.classList.add('show');
+        console.log('✅ Notification animation triggered');
+    }, 10);
     
     // Auto remove after 5 seconds
     setTimeout(() => {
         notification.classList.remove('show');
-        setTimeout(() => notification.remove(), 300);
+        setTimeout(() => {
+            notification.remove();
+            console.log('✅ Notification removed');
+        }, 300);
     }, 5000);
     
     // Browser notification (check if supported)
     if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
         try {
             new Notification(title, { body: message });
+            console.log('✅ Browser notification sent');
         } catch (e) {
-            console.log('Browser notification not available');
+            console.log('⚠️ Browser notification not available:', e);
         }
     }
 }
@@ -192,12 +203,126 @@ function showNotification(title, message) {
     showAdminNotification(title, message, 'info');
 }
 
+// Load admin events list
+async function loadAdminEvents() {
+    try {
+        const response = await fetch('/api/events?limit=50');
+        const data = await response.json();
+        
+        console.log('📅 Admin events loaded:', data);
+        
+        const container = document.getElementById('admin-events-list');
+        if (!container) {
+            console.warn('⚠️ Admin events container not found');
+            return;
+        }
+        
+        if (data.events && data.events.length > 0) {
+            container.innerHTML = data.events.map(event => {
+                const date = new Date(event.event_date);
+                const day = date.getDate();
+                const month = date.toLocaleDateString('ja-JP', { month: 'short' });
+                const fullDate = date.toLocaleString('ja-JP', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                return `
+                    <div class="admin-event-item">
+                        <div class="admin-event-date">
+                            <span class="admin-event-day">${day}</span>
+                            <span class="admin-event-month">${month}</span>
+                        </div>
+                        <div class="admin-event-details">
+                            <div class="admin-event-title">${escapeHtml(event.title)}</div>
+                            <div class="admin-event-description">${escapeHtml(event.description || '')}</div>
+                            <div class="admin-event-meta">
+                                <span class="admin-event-type">${escapeHtml(event.event_type || 'general')}</span>
+                                <span>📅 ${fullDate}</span>
+                            </div>
+                        </div>
+                        <div class="admin-event-actions">
+                            <button class="btn-delete" onclick="deleteEvent(${event.id})">🗑️ 削除</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            container.innerHTML = '<div class="loading">イベントがありません</div>';
+        }
+    } catch (error) {
+        console.error('❌ Failed to load admin events:', error);
+        const container = document.getElementById('admin-events-list');
+        if (container) {
+            container.innerHTML = '<div class="loading">イベントの読み込みに失敗しました</div>';
+        }
+    }
+}
+
+// Delete event
+async function deleteEvent(eventId) {
+    if (!confirm('このイベントを削除してもよろしいですか？')) {
+        return;
+    }
+    
+    console.log('🗑️ Deleting event:', eventId);
+    
+    try {
+        const response = await fetch(`/api/events/${eventId}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        console.log('✅ Delete response:', response.status, data);
+        
+        if (response.ok) {
+            showAdminNotification(
+                '✅ 削除成功', 
+                'イベントを削除しました', 
+                'success'
+            );
+            
+            // Reload events list
+            loadAdminEvents();
+            
+            // Reload events on public page if available
+            if (typeof loadEvents === 'function') {
+                loadEvents();
+            }
+        } else {
+            showAdminNotification(
+                '❌ エラー', 
+                'イベントの削除に失敗しました: ' + (data.error || 'Unknown error'), 
+                'error'
+            );
+        }
+    } catch (error) {
+        console.error('❌ Event deletion error:', error);
+        showAdminNotification(
+            '❌ エラー', 
+            'エラーが発生しました: ' + error.message, 
+            'error'
+        );
+    }
+}
+
+// HTML escape utility
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text || '';
+    return div.innerHTML;
+}
+
 // Initialize enhanced features
 document.addEventListener('DOMContentLoaded', () => {
     // Check if we're on the admin page
     const dashboard = document.getElementById('admin-dashboard');
     if (dashboard && dashboard.style.display !== 'none') {
         loadQuickCommands();
+        loadAdminEvents();
     }
     
     // Setup event creation button
@@ -220,5 +345,7 @@ if (originalUpdateStatus) {
 // Expose functions to global scope for onclick handlers
 window.createEvent = createEvent;
 window.executeQuickCommand = executeQuickCommand;
+window.deleteEvent = deleteEvent;
+window.loadAdminEvents = loadAdminEvents;
 
 console.log('✅ Enhanced admin features loaded');

@@ -45,6 +45,11 @@ function showDashboard() {
     if (typeof loadQuickCommands === 'function') {
         loadQuickCommands();
     }
+    
+    // Load admin events list (from admin-enhanced.js)
+    if (typeof loadAdminEvents === 'function') {
+        loadAdminEvents();
+    }
 }
 
 // Login form submission
