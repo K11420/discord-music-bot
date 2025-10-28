@@ -45,17 +45,27 @@ async function executeQuickCommand(command) {
 async function createEvent() {
     console.log('📅 createEvent() called');
     
-    const title = document.getElementById('event-title').value;
-    const date = document.getElementById('event-date').value;
-    const type = document.getElementById('event-type').value;
-    const description = document.getElementById('event-description').value;
+    const titleEl = document.getElementById('event-title');
+    const dateEl = document.getElementById('event-date');
+    const typeEl = document.getElementById('event-type');
+    const descriptionEl = document.getElementById('event-description');
+    const button = event.target;
     
-    console.log('Form values:', { title, date, type, description });
+    const title = titleEl.value;
+    const date = dateEl.value;
+    const type = typeEl.value;
+    const description = descriptionEl.value;
+    
+    console.log('📝 Form values:', { title, date, type, description });
     
     if (!title || !date) {
-        alert('イベント名と日時を入力してください');
+        showAdminNotification('⚠️ 入力エラー', 'イベント名と日時を入力してください', 'warning');
         return;
     }
+    
+    // Disable button and show loading
+    button.disabled = true;
+    button.textContent = '作成中...';
     
     try {
         const response = await fetch('/api/events', {
@@ -70,25 +80,42 @@ async function createEvent() {
         });
         
         const data = await response.json();
-        console.log('Response:', response.status, data);
+        console.log('✅ Response:', response.status, data);
         
         if (response.ok) {
-            alert('✅ イベントを作成しました！');
+            showAdminNotification(
+                '✅ 成功', 
+                `イベント「${title}」を作成しました！`, 
+                'success'
+            );
+            
             // Clear form
-            document.getElementById('event-title').value = '';
-            document.getElementById('event-date').value = '';
-            document.getElementById('event-description').value = '';
+            titleEl.value = '';
+            dateEl.value = '';
+            descriptionEl.value = '';
             
             // Reload events on public page if available
             if (typeof loadEvents === 'function') {
                 loadEvents();
             }
         } else {
-            alert('❌ イベントの作成に失敗しました: ' + (data.error || 'Unknown error'));
+            showAdminNotification(
+                '❌ エラー', 
+                'イベントの作成に失敗しました: ' + (data.error || 'Unknown error'), 
+                'error'
+            );
         }
     } catch (error) {
         console.error('❌ Event creation error:', error);
-        alert('❌ エラーが発生しました: ' + error.message);
+        showAdminNotification(
+            '❌ エラー', 
+            'エラーが発生しました: ' + error.message, 
+            'error'
+        );
+    } finally {
+        // Re-enable button
+        button.disabled = false;
+        button.textContent = 'イベント作成';
     }
 }
 
@@ -123,15 +150,42 @@ function updateAdminStats(data) {
     }
 }
 
-// Simple notification function
-function showNotification(title, message) {
-    // You can enhance this with a custom notification UI
+// Enhanced notification function with custom UI
+function showAdminNotification(title, message, type = 'info') {
     console.log(`[${title}] ${message}`);
     
-    // Simple alert for now
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `admin-notification admin-notification-${type}`;
+    notification.innerHTML = `
+        <div class="admin-notification-content">
+            <div class="admin-notification-title">${title}</div>
+            <div class="admin-notification-message">${message}</div>
+        </div>
+        <button class="admin-notification-close" onclick="this.parentElement.remove()">✕</button>
+    `;
+    
+    // Add to body
+    document.body.appendChild(notification);
+    
+    // Trigger animation
+    setTimeout(() => notification.classList.add('show'), 10);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    }, 5000);
+    
+    // Browser notification
     if (Notification.permission === 'granted') {
         new Notification(title, { body: message });
     }
+}
+
+// Legacy function for compatibility
+function showNotification(title, message) {
+    showAdminNotification(title, message, 'info');
 }
 
 // Initialize enhanced features
@@ -140,6 +194,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const dashboard = document.getElementById('admin-dashboard');
     if (dashboard && dashboard.style.display !== 'none') {
         loadQuickCommands();
+    }
+    
+    // Setup event creation button
+    const createEventBtn = document.getElementById('create-event-btn');
+    if (createEventBtn) {
+        createEventBtn.addEventListener('click', createEvent);
+        console.log('✅ Event creation button listener attached');
     }
 });
 
