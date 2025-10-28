@@ -40,6 +40,11 @@ function showDashboard() {
     
     // Load initial logs
     refreshLogs();
+    
+    // Load quick commands (from admin-enhanced.js)
+    if (typeof loadQuickCommands === 'function') {
+        loadQuickCommands();
+    }
 }
 
 // Login form submission

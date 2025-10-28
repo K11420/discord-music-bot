@@ -95,16 +95,14 @@
     padding: 1.5rem;
     display: flex;
     align-items: center;
-    gap: 1rem;
-}
-
-.stat-icon {
-    font-size: 2.5rem;
+    justify-content: center;
 }
 
 .stat-info {
     display: flex;
     flex-direction: column;
+    width: 100%;
+    text-align: center;
 }
 
 .stat-label {
@@ -123,6 +121,71 @@
     text-align: center;
     padding: 2rem;
     color: var(--text-secondary);
+    grid-column: 1 / -1;
+}
+
+.command-panel {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    grid-column: 1 / -1;
+}
+
+.command-input-group {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.command-input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    padding: 1rem 1.5rem;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+}
+
+.command-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.command-examples {
+    margin-top: 1rem;
+    padding: 0.8rem;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 8px;
+    border-left: 3px solid #667eea;
+}
+
+.command-examples small {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+.logs-panel {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    grid-column: 1 / -1;
+}
+
+.control-panel {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
     grid-column: 1 / -1;
 }
 
