@@ -50,6 +50,16 @@ function showDashboard() {
     if (typeof loadAdminEvents === 'function') {
         loadAdminEvents();
     }
+    
+    // Check notification permission (from admin-enhanced.js)
+    if (typeof checkNotificationPermission === 'function') {
+        checkNotificationPermission();
+    }
+    
+    // Setup notification permission button (from admin-enhanced.js)
+    if (typeof setupNotificationPermission === 'function') {
+        setupNotificationPermission();
+    }
 }
 
 // Login form submission

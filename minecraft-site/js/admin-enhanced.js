@@ -187,14 +187,63 @@ function showAdminNotification(title, message, type = 'info') {
         }, 300);
     }, 5000);
     
-    // Browser notification (check if supported)
-    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+    // Browser notification - Always try to send
+    sendBrowserNotification(title, message);
+}
+
+// Send browser notification
+async function sendBrowserNotification(title, message) {
+    // Check if Notification API is supported
+    if (typeof Notification === 'undefined') {
+        console.log('⚠️ Notification API not supported');
+        return;
+    }
+    
+    console.log('🔔 Current notification permission:', Notification.permission);
+    
+    // Request permission if not granted
+    if (Notification.permission === 'default') {
+        console.log('🔔 Requesting notification permission...');
         try {
-            new Notification(title, { body: message });
-            console.log('✅ Browser notification sent');
-        } catch (e) {
-            console.log('⚠️ Browser notification not available:', e);
+            const permission = await Notification.requestPermission();
+            console.log('🔔 Permission result:', permission);
+            
+            if (permission === 'granted') {
+                sendNotification(title, message);
+            }
+        } catch (error) {
+            console.log('⚠️ Permission request error:', error);
         }
+    } else if (Notification.permission === 'granted') {
+        sendNotification(title, message);
+    } else {
+        console.log('⚠️ Notification permission denied');
+    }
+}
+
+// Actually send the notification
+function sendNotification(title, message) {
+    try {
+        const notification = new Notification(title, {
+            body: message,
+            icon: '/favicon.ico',
+            badge: '/favicon.ico',
+            tag: 'admin-notification',
+            requireInteraction: false
+        });
+        
+        console.log('✅ Browser notification sent');
+        
+        // Close after 5 seconds
+        setTimeout(() => notification.close(), 5000);
+        
+        // Handle click
+        notification.onclick = function() {
+            window.focus();
+            notification.close();
+        };
+    } catch (e) {
+        console.log('⚠️ Browser notification error:', e);
     }
 }
 
@@ -316,6 +365,75 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// Check and show notification permission panel
+function checkNotificationPermission() {
+    if (typeof Notification === 'undefined') {
+        console.log('⚠️ Notification API not supported');
+        return;
+    }
+    
+    const panel = document.getElementById('notification-permission-panel');
+    if (!panel) return;
+    
+    console.log('🔔 Checking notification permission:', Notification.permission);
+    
+    if (Notification.permission === 'default') {
+        // Show permission panel
+        panel.style.display = 'block';
+        console.log('✅ Showing notification permission panel');
+    } else if (Notification.permission === 'granted') {
+        panel.style.display = 'none';
+        console.log('✅ Notifications already granted');
+    } else {
+        panel.style.display = 'none';
+        console.log('⚠️ Notifications denied');
+    }
+}
+
+// Setup notification permission button
+function setupNotificationPermission() {
+    const btn = document.getElementById('enable-notifications-btn');
+    if (!btn) return;
+    
+    btn.addEventListener('click', async () => {
+        console.log('🔔 Requesting notification permission...');
+        
+        if (typeof Notification === 'undefined') {
+            alert('このブラウザは通知をサポートしていません');
+            return;
+        }
+        
+        try {
+            const permission = await Notification.requestPermission();
+            console.log('🔔 Permission result:', permission);
+            
+            if (permission === 'granted') {
+                // Hide panel
+                const panel = document.getElementById('notification-permission-panel');
+                if (panel) panel.style.display = 'none';
+                
+                // Show success notification
+                showAdminNotification(
+                    '🔔 通知有効',
+                    '通知が有効になりました！',
+                    'success'
+                );
+                
+                // Send test notification
+                new Notification('🎉 Bedrock Server 管理画面', {
+                    body: '通知が正常に設定されました！',
+                    icon: '/favicon.ico'
+                });
+            } else {
+                alert('通知が拒否されました。ブラウザの設定から許可してください。');
+            }
+        } catch (error) {
+            console.error('⚠️ Permission request error:', error);
+            alert('通知の許可リクエストに失敗しました');
+        }
+    });
+}
+
 // Initialize enhanced features
 document.addEventListener('DOMContentLoaded', () => {
     // Check if we're on the admin page
@@ -323,6 +441,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (dashboard && dashboard.style.display !== 'none') {
         loadQuickCommands();
         loadAdminEvents();
+        checkNotificationPermission();
+        setupNotificationPermission();
     }
     
     // Setup event creation button
@@ -347,5 +467,7 @@ window.createEvent = createEvent;
 window.executeQuickCommand = executeQuickCommand;
 window.deleteEvent = deleteEvent;
 window.loadAdminEvents = loadAdminEvents;
+window.checkNotificationPermission = checkNotificationPermission;
+window.setupNotificationPermission = setupNotificationPermission;
 
 console.log('✅ Enhanced admin features loaded');
