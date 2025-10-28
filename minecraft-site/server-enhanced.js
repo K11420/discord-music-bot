@@ -737,6 +737,22 @@ app.post('/api/push-unsubscribe', bodyParser.json(), (req, res) => {
     res.json({ success: true });
 });
 
+// Debug endpoint: Get subscription count
+app.get('/api/push-debug', (req, res) => {
+    const subscriptions = Array.from(pushSubscriptions.entries()).map(([endpoint, sub]) => ({
+        endpoint: endpoint.substring(0, 60) + '...',
+        hasKeys: !!sub.keys,
+        p256dh: sub.keys?.p256dh ? sub.keys.p256dh.substring(0, 20) + '...' : 'none',
+        auth: sub.keys?.auth ? sub.keys.auth.substring(0, 20) + '...' : 'none'
+    }));
+    
+    res.json({
+        count: pushSubscriptions.size,
+        vapidConfigured: !!VAPID_PUBLIC_KEY,
+        subscriptions: subscriptions
+    });
+});
+
 // Function to send push notification to all subscribers
 async function sendPushNotification(title, body, data = {}) {
     if (!VAPID_PUBLIC_KEY) {
