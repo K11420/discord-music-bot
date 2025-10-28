@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bedrock Server - Minecraft統合版サーバー</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Minecraft:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Simple Background -->
+    <div id="particles-js"></div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <nav class="navbar">
+                <div class="logo">
+                    <span class="logo-icon">⛏️</span>
+                    <span class="logo-text">Bedrock Server</span>
+                </div>
+                <ul class="nav-menu">
+                    <li><a href="#home">ホーム</a></li>
+                    <li><a href="#features">特徴</a></li>
+                    <li><a href="#join">参加方法</a></li>
+                    <li><a href="#rules">ルール</a></li>
+                </ul>
+                <button class="mobile-menu-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">
+                <span class="title-main">Bedrock Server</span>
+                <span class="title-sub">統合版マインクラフトサーバー</span>
+            </h1>
+            <p class="hero-description">
+                24時間稼働のサバイバルサーバーで冒険を始めよう！
+            </p>
+            <div class="hero-buttons">
+                <a href="#join" class="btn btn-primary">今すぐ参加</a>
+                <a href="#features" class="btn btn-secondary">特徴を見る</a>
+            </div>
+        </div>
+        <div class="hero-stats">
+            <div class="stat-card">
+                <span class="stat-icon">👥</span>
+                <span class="stat-value" id="online-players">0</span>
+                <span class="stat-label">オンライン</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">🌐</span>
+                <span class="stat-value" id="server-status">確認中...</span>
+                <span class="stat-label">サーバー状態</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">⏱️</span>
+                <span class="stat-value" id="uptime">0h</span>
+                <span class="stat-label">稼働時間</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="section features">
+        <div class="container">
+            <h2 class="section-title">サーバーの特徴</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>24時間稼働</h3>
+                    <p>いつでもアクセス可能な安定したサーバー環境</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🛡️</div>
+                    <h3>安全な環境</h3>
+                    <p>荒らし対策とバックアップ体制完備</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🚀</div>
+                    <h3>高性能サーバー</h3>
+                    <p>最大8スレッドで快適なプレイ環境</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">👨‍👩‍👧‍👦</div>
+                    <h3>コミュニティ</h3>
+                    <p>フレンドリーなプレイヤーコミュニティ</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>サバイバル重視</h3>
+                    <p>純粋なサバイバル体験を提供</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3>定期更新</h3>
+                    <p>最新バージョンへの迅速な対応</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Join Section -->
+    <section id="join" class="section join-section">
+        <div class="container">
+            <h2 class="section-title">参加方法</h2>
+            <div class="join-steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Minecraftを起動</h3>
+                        <p>統合版（Bedrock Edition）のMinecraftを起動します</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>「遊ぶ」を選択</h3>
+                        <p>メニューから「遊ぶ」→「サーバー」タブを開きます</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>サーバーを追加</h3>
+                        <p>「サーバーを追加」を選択し、以下の情報を入力：<br>
+                        <strong>アドレス:</strong> schale41.jp<br>
+                        <strong>ポート:</strong> 4096</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>参加</h3>
+                        <p>サーバーに接続して冒険を始めましょう！</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Rules Section -->
+    <section id="rules" class="section rules-section">
+        <div class="container">
+            <h2 class="section-title">サーバールール</h2>
+            <div class="rules-grid">
+                <div class="rule-card">
+                    <div class="rule-icon">✅</div>
+                    <h3>してもいいこと</h3>
+                    <ul>
+                        <li>建築や探検を楽しむ</li>
+                        <li>他プレイヤーとの協力</li>
+                        <li>リソースの収集と取引</li>
+                        <li>クリエイティブな遊び方</li>
+                    </ul>
+                </div>
+                <div class="rule-card danger">
+                    <div class="rule-icon">❌</div>
+                    <h3>禁止事項</h3>
+                    <ul>
+                        <li>他プレイヤーへの嫌がらせ</li>
+                        <li>建造物の破壊</li>
+                        <li>チートやハックの使用</li>
+                        <li>不適切な発言や行動</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="rules-note">
+                <p>⚠️ ルール違反が確認された場合、警告なしにBANされる可能性があります</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Bedrock Server</h4>
+                    <p>統合版Minecraftサーバー</p>
+                </div>
+                <div class="footer-section">
+                    <h4>リンク</h4>
+                    <ul>
+                        <li><a href="#home">ホーム</a></li>
+                        <li><a href="#features">特徴</a></li>
+                        <li><a href="#join">参加方法</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>サーバーアドレス</h4>
+                    <code>schale41.jp:4096</code>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Bedrock Server. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/main.js"></script>
+</body>
+</html>

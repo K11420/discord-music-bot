@@ -1,0 +1,14 @@
+{
+    "online": true,
+    "players": {
+        "online": 0,
+        "max": 10
+    },
+    "version": "Bedrock Edition",
+    "gamemode": "Survival",
+    "difficulty": "Easy",
+    "uptime": 0,
+    "motd": "Bedrock Server - 統合版サーバー",
+    "address": "schale41.jp",
+    "port": 4096
+}

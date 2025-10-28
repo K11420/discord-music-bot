@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Bedrock Server</title>
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="login-screen" class="login-container">
+        <div class="login-box">
+            <h1>🔐 管理者ログイン</h1>
+            <form id="login-form">
+                <input type="password" id="password" placeholder="パスワードを入力" required>
+                <button type="submit" class="btn-login">ログイン</button>
+            </form>
+            <div id="login-error" class="error-message"></div>
+            <a href="/" class="back-link">← ホームに戻る</a>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="admin-dashboard" class="dashboard" style="display: none;">
+        <!-- Header -->
+        <header class="admin-header">
+            <div class="header-left">
+                <h1>⛏️ Bedrock Server 管理パネル</h1>
+            </div>
+            <div class="header-right">
+                <span class="admin-badge">管理者</span>
+                <button class="btn-logout" onclick="logout()">ログアウト</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="admin-content">
+            <!-- Server Status Card -->
+            <div class="card status-card">
+                <div class="card-header">
+                    <h2>📊 サーバー状態</h2>
+                    <span id="status-indicator" class="status-indicator">●</span>
+                </div>
+                <div class="card-body">
+                    <div class="status-grid">
+                        <div class="status-item">
+                            <span class="label">状態:</span>
+                            <span id="server-status" class="value">確認中...</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="label">オンライン:</span>
+                            <span id="online-players" class="value">0</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="label">最大人数:</span>
+                            <span id="max-players" class="value">10</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="label">稼働時間:</span>
+                            <span id="uptime" class="value">0h 0m</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="label">Screen:</span>
+                            <span id="screen-session" class="value">-</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="label">アドレス:</span>
+                            <span id="server-address" class="value">schale41.jp:4096</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Panel -->
+            <div class="card control-card">
+                <div class="card-header">
+                    <h2>🎮 サーバー制御</h2>
+                </div>
+                <div class="card-body">
+                    <div class="control-buttons">
+                        <button class="btn btn-success" onclick="startServer()">
+                            ▶️ 起動
+                        </button>
+                        <button class="btn btn-danger" onclick="stopServer()">
+                            ⏹️ 停止
+                        </button>
+                        <button class="btn btn-warning" onclick="restartServer()">
+                            🔄 再起動
+                        </button>
+                    </div>
+                    <div id="control-message" class="message"></div>
+                </div>
+            </div>
+
+            <!-- Quick Commands -->
+            <div class="card commands-card">
+                <div class="card-header">
+                    <h2>⚡ クイックコマンド</h2>
+                </div>
+                <div class="card-body">
+                    <div class="quick-commands">
+                        <button class="btn-command" onclick="sendQuickCommand('list')">
+                            👥 プレイヤーリスト
+                        </button>
+                        <button class="btn-command" onclick="sendQuickCommand('save-all')">
+                            💾 ワールド保存
+                        </button>
+                        <button class="btn-command" onclick="sendQuickCommand('time set day')">
+                            ☀️ 昼にする
+                        </button>
+                        <button class="btn-command" onclick="sendQuickCommand('weather clear')">
+                            🌤️ 快晴にする
+                        </button>
+                        <button class="btn-command" onclick="sendQuickCommand('difficulty easy')">
+                            😊 難易度: Easy
+                        </button>
+                        <button class="btn-command" onclick="sendQuickCommand('difficulty normal')">
+                            😐 難易度: Normal
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Terminal -->
+            <div class="card terminal-card">
+                <div class="card-header">
+                    <h2>💻 サーバーターミナル</h2>
+                    <button class="btn-small" onclick="clearTerminal()">クリア</button>
+                </div>
+                <div class="card-body">
+                    <div id="terminal" class="terminal">
+                        <div class="terminal-output" id="terminal-output">
+                            <div class="terminal-line">Waiting for server logs...</div>
+                        </div>
+                    </div>
+                    <div class="terminal-input-container">
+                        <span class="terminal-prompt">$</span>
+                        <input 
+                            type="text" 
+                            id="terminal-input" 
+                            class="terminal-input" 
+                            placeholder="コマンドを入力..."
+                            onkeypress="handleTerminalInput(event)"
+                        >
+                        <button class="btn-send" onclick="sendCommand()">送信</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Server Logs -->
+            <div class="card logs-card">
+                <div class="card-header">
+                    <h2>📜 サーバーログ</h2>
+                    <button class="btn-small" onclick="refreshLogs()">更新</button>
+                </div>
+                <div class="card-body">
+                    <div id="logs-container" class="logs-container">
+                        <pre id="server-logs">ログを読み込み中...</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/admin.js"></script>
+</body>
+</html>
