@@ -38,32 +38,70 @@ function setupNotificationButton() {
     if (!btn) return;
     
     // Check if notifications are supported
-    if (typeof Notification === 'undefined') {
+    if (typeof Notification === 'undefined' && !('serviceWorker' in navigator)) {
         btn.style.display = 'none';
         return;
     }
     
     // Check if notifications are already enabled
-    if (Notification.permission === 'granted') {
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
         btn.textContent = '🔔 通知有効';
-        btn.disabled = true;
+        btn.classList.remove('btn-outline');
+        btn.classList.add('btn-success');
     }
     
     btn.addEventListener('click', async () => {
-        if (!('Notification' in window)) {
-            alert('このブラウザは通知をサポートしていません');
-            return;
-        }
+        console.log('🔔 Notification button clicked');
         
-        try {
-            const permission = await Notification.requestPermission();
-            if (permission === 'granted') {
-                btn.textContent = '🔔 通知有効';
-                btn.disabled = true;
-                showNotification('通知が有効になりました', 'サーバーの状態変更を通知します');
+        // Try Service Worker notification first
+        if ('serviceWorker' in navigator) {
+            try {
+                const registration = await navigator.serviceWorker.ready;
+                console.log('✅ Service Worker ready');
+                
+                // Request permission
+                if (typeof Notification !== 'undefined') {
+                    const permission = await Notification.requestPermission();
+                    console.log('🔔 Permission result:', permission);
+                    
+                    if (permission === 'granted') {
+                        btn.textContent = '🔔 通知有効';
+                        btn.classList.remove('btn-outline');
+                        btn.classList.add('btn-success');
+                        
+                        // Send test notification
+                        showPublicNotification(
+                            '🔔 通知が有効になりました',
+                            '新しいイベントが追加されたときに通知が届きます'
+                        );
+                        
+                        // Also send browser notification
+                        new Notification('🎉 Bedrock Server', {
+                            body: '通知が有効になりました！新しいイベントをお知らせします。',
+                            icon: '/icon-192.png',
+                            badge: '/icon-192.png'
+                        });
+                    }
+                }
+            } catch (error) {
+                console.log('⚠️ Notification setup error:', error);
+                alert('通知の設定に失敗しました。ブラウザの設定を確認してください。');
             }
-        } catch (error) {
-            console.log('Notification permission error:', error);
+        } else if ('Notification' in window) {
+            // Fallback to standard Notification API
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    btn.textContent = '🔔 通知有効';
+                    btn.classList.remove('btn-outline');
+                    btn.classList.add('btn-success');
+                    showNotification('通知が有効になりました', 'イベント通知を受け取れます');
+                }
+            } catch (error) {
+                console.log('Notification permission error:', error);
+            }
+        } else {
+            alert('このブラウザは通知をサポートしていません');
         }
     });
 }

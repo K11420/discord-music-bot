@@ -408,6 +408,30 @@ app.post('/api/events', requireAuth, (req, res) => {
     db.createEvent({ title, description, event_date, event_type })
         .then(result => {
             res.json({ success: true, message: 'Event created', id: result.id });
+            
+            // Format event date
+            const eventDate = new Date(event_date);
+            const dateStr = eventDate.toLocaleDateString('ja-JP', { 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            // Broadcast to all users (public notification)
+            broadcastToAll({ 
+                type: 'event_notification',
+                notification: {
+                    title: '🎉 新しいイベント',
+                    message: `「${title}」が追加されました！\n📅 ${dateStr}`,
+                    eventId: result.id,
+                    eventTitle: title,
+                    eventDate: event_date,
+                    eventType: event_type
+                }
+            });
+            
+            // Also notify admins
             broadcastToAdmins({ type: 'event_created', event: { id: result.id, title, event_date } });
         })
         .catch(err => res.status(500).json({ error: 'Failed to create event' }));
@@ -499,6 +523,17 @@ function broadcastToAdmins(data) {
             client.send(message);
         }
     });
+}
+
+// Broadcast to all connected clients (public users)
+function broadcastToAll(data) {
+    const message = JSON.stringify(data);
+    clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(message);
+        }
+    });
+    console.log('📢 Broadcast to all clients:', data.type);
 }
 
 wss.on('connection', (ws, req) => {

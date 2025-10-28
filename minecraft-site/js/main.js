@@ -21,6 +21,9 @@ function connectWebSocket() {
             
             if (message.type === 'status_update') {
                 updateStatusDisplay(message.data);
+            } else if (message.type === 'event_notification') {
+                // Handle event notification for public users
+                handleEventNotification(message.notification);
             }
         } catch (error) {
             console.error('WebSocket message error:', error);
@@ -35,6 +38,98 @@ function connectWebSocket() {
         console.log('WebSocket disconnected - Attempting reconnect...');
         setTimeout(connectWebSocket, 3000);
     };
+}
+
+// Handle event notification from server
+async function handleEventNotification(notification) {
+    console.log('🎉 Event notification received:', notification);
+    
+    // Show in-page notification
+    showPublicNotification(notification.title, notification.message);
+    
+    // Send browser/Service Worker notification
+    await sendPublicNotification(notification.title, notification.message);
+    
+    // Reload events list if on events section
+    if (typeof loadEvents === 'function') {
+        loadEvents();
+    }
+}
+
+// Show in-page notification for public users
+function showPublicNotification(title, message) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = 'public-notification';
+    notification.innerHTML = `
+        <div class="public-notification-content">
+            <div class="public-notification-title">${title}</div>
+            <div class="public-notification-message">${message}</div>
+        </div>
+        <button class="public-notification-close" onclick="this.parentElement.remove()">✕</button>
+    `;
+    
+    // Add to body
+    document.body.appendChild(notification);
+    
+    // Trigger animation
+    setTimeout(() => notification.classList.add('show'), 10);
+    
+    // Auto remove after 8 seconds
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    }, 8000);
+}
+
+// Send browser/Service Worker notification to public users
+async function sendPublicNotification(title, message) {
+    // Try Service Worker first (iOS PWA)
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        try {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'SHOW_NOTIFICATION',
+                title: title,
+                body: message,
+                icon: '/icon-192.png'
+            });
+            console.log('✅ Service Worker notification sent');
+            return;
+        } catch (error) {
+            console.log('⚠️ Service Worker notification error:', error);
+        }
+    }
+    
+    // Fallback to Notification API
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        try {
+            const notif = new Notification(title, {
+                body: message,
+                icon: '/icon-192.png',
+                badge: '/icon-192.png',
+                tag: 'event-notification',
+                requireInteraction: false
+            });
+            
+            // Close after 8 seconds
+            setTimeout(() => notif.close(), 8000);
+            
+            // Handle click
+            notif.onclick = function() {
+                window.focus();
+                // Scroll to events section
+                const eventsSection = document.getElementById('events');
+                if (eventsSection) {
+                    eventsSection.scrollIntoView({ behavior: 'smooth' });
+                }
+                notif.close();
+            };
+            
+            console.log('✅ Browser notification sent');
+        } catch (error) {
+            console.log('⚠️ Notification error:', error);
+        }
+    }
 }
 
 function updateStatusDisplay(data) {
