@@ -387,8 +387,13 @@ async function loadEvents() {
         const response = await fetch('/api/events?limit=10');
         const data = await response.json();
         
+        console.log('📅 Events loaded:', data);
+        
         const container = document.getElementById('events-container');
-        if (!container) return;
+        if (!container) {
+            console.warn('⚠️ Events container not found');
+            return;
+        }
         
         if (data.events && data.events.length > 0) {
             container.innerHTML = data.events.map(event => {
@@ -414,7 +419,11 @@ async function loadEvents() {
             container.innerHTML = '<div class="events-loading">予定されているイベントはありません</div>';
         }
     } catch (error) {
-        console.error('Failed to load events:', error);
+        console.error('❌ Failed to load events:', error);
+        const container = document.getElementById('events-container');
+        if (container) {
+            container.innerHTML = '<div class="events-loading">イベントの読み込みに失敗しました</div>';
+        }
     }
 }
 
@@ -439,19 +448,24 @@ async function loadRankings() {
         const response = await fetch(`/api/stats/players?type=${currentRankingType}&limit=10`);
         const data = await response.json();
         
+        console.log('🏆 Rankings loaded:', { type: currentRankingType, data });
+        
         const container = document.getElementById('rankings-container');
-        if (!container) return;
+        if (!container) {
+            console.warn('⚠️ Rankings container not found');
+            return;
+        }
         
         if (data.rankings && data.rankings.length > 0) {
             container.innerHTML = data.rankings.map((player, index) => {
                 const position = index + 1;
                 const positionClass = position <= 3 ? `top-${position}` : '';
-                const value = formatRankingValue(currentRankingType, player[currentRankingType]);
+                const value = formatRankingValue(currentRankingType, player[currentRankingType] || 0);
                 
                 return `
                     <div class="ranking-item">
                         <div class="ranking-position ${positionClass}">${position}</div>
-                        <div class="ranking-player">${escapeHtml(player.player_name)}</div>
+                        <div class="ranking-player">${escapeHtml(player.player_name || 'Unknown')}</div>
                         <div class="ranking-value">${value}</div>
                     </div>
                 `;
@@ -460,7 +474,11 @@ async function loadRankings() {
             container.innerHTML = '<div class="rankings-loading">ランキングデータがありません</div>';
         }
     } catch (error) {
-        console.error('Failed to load rankings:', error);
+        console.error('❌ Failed to load rankings:', error);
+        const container = document.getElementById('rankings-container');
+        if (container) {
+            container.innerHTML = '<div class="rankings-loading">ランキングの読み込みに失敗しました</div>';
+        }
     }
 }
 
