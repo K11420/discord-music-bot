@@ -63,8 +63,8 @@ app.use(session({
     cookie: { maxAge: 24 * 60 * 60 * 1000 }
 }));
 
-// Serve static files
-app.use(express.static(__dirname));
+// Serve static files (exclude index.html to prevent auto-serving)
+app.use(express.static(__dirname, { index: false }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Authentication middleware
