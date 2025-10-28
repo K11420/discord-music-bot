@@ -1,8 +1,8 @@
 {
-  "name": "Bedrock Server 管理画面",
-  "short_name": "Bedrock管理",
-  "description": "Minecraft Bedrock Server管理ダッシュボード",
-  "start_url": "/admin",
+  "name": "Bedrock Server",
+  "short_name": "Bedrock",
+  "description": "Minecraft Bedrock Server - 統合版サーバー",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0e14",
   "theme_color": "#1a1f2e",
