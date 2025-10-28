@@ -739,7 +739,13 @@ app.post('/api/push-unsubscribe', bodyParser.json(), (req, res) => {
 
 // Function to send push notification to all subscribers
 async function sendPushNotification(title, body, data = {}) {
-    if (!VAPID_PUBLIC_KEY || pushSubscriptions.size === 0) {
+    if (!VAPID_PUBLIC_KEY) {
+        console.log('⚠️ Web Push not configured (no VAPID keys)');
+        return;
+    }
+    
+    if (pushSubscriptions.size === 0) {
+        console.log('⚠️ No push subscriptions registered. Clients need to subscribe.');
         return;
     }
     

@@ -274,19 +274,23 @@ async function subscribeToPushNotifications(registration) {
             });
             
             console.log('✅ Subscribed to push notifications');
-            
-            // Send subscription to server
-            await fetch('/api/push-subscribe', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(subscription)
-            });
-            
-            console.log('✅ Subscription sent to server');
         } else {
             console.log('✅ Already subscribed to push notifications');
+        }
+        
+        // Always send subscription to server (in case server restarted)
+        const subscribeResponse = await fetch('/api/push-subscribe', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(subscription)
+        });
+        
+        if (subscribeResponse.ok) {
+            console.log('✅ Subscription sent to server');
+        } else {
+            console.log('⚠️ Failed to send subscription to server');
         }
     } catch (error) {
         console.log('⚠️ Push subscription error:', error);

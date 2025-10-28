@@ -1,5 +1,5 @@
 // Service Worker for Push Notifications with Web Push API
-const CACHE_NAME = 'bedrock-server-v3.3.1';
+const CACHE_NAME = 'bedrock-server-v3.3.2';
 const urlsToCache = [
     '/',
     '/admin',
