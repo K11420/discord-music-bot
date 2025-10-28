@@ -1,5 +1,5 @@
 // Service Worker for Push Notifications
-const CACHE_NAME = 'bedrock-server-v3.1.0';
+const CACHE_NAME = 'bedrock-server-v3.2.0';
 const urlsToCache = [
     '/',
     '/admin',
@@ -13,6 +13,58 @@ const urlsToCache = [
     '/js/admin-enhanced.js',
     '/manifest.json'
 ];
+
+// 最後にチェックしたイベントIDを保存
+let lastCheckedEventId = 0;
+
+// バックグラウンドで定期的にイベントをチェック
+async function checkForNewEvents() {
+    try {
+        const response = await fetch('/api/events?limit=1');
+        if (!response.ok) return;
+        
+        const events = await response.json();
+        if (!events || events.length === 0) return;
+        
+        const latestEvent = events[0];
+        
+        // 新しいイベントがあれば通知を表示
+        if (latestEvent.id > lastCheckedEventId && lastCheckedEventId !== 0) {
+            console.log('🔔 New event detected:', latestEvent.title);
+            
+            // 日本時間でフォーマット
+            const eventDate = new Date(latestEvent.event_date);
+            const jstDate = new Date(eventDate.getTime() + (9 * 60 * 60 * 1000));
+            const dateStr = jstDate.toLocaleString('ja-JP', {
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                timeZone: 'Asia/Tokyo'
+            });
+            
+            await self.registration.showNotification('🎉 新しいイベント', {
+                body: `「${latestEvent.title}」が追加されました！\n📅 ${dateStr}`,
+                icon: '/icon-192.png',
+                badge: '/icon-192.png',
+                vibrate: [200, 100, 200],
+                tag: 'event-notification',
+                requireInteraction: false,
+                data: {
+                    eventId: latestEvent.id,
+                    url: '/'
+                }
+            });
+        }
+        
+        lastCheckedEventId = latestEvent.id;
+    } catch (error) {
+        console.log('Error checking events:', error);
+    }
+}
+
+// 定期的にイベントをチェック（5分ごと）
+setInterval(checkForNewEvents, 5 * 60 * 1000);
 
 // Install event
 self.addEventListener('install', event => {
@@ -79,8 +131,22 @@ self.addEventListener('notificationclick', event => {
     
     event.notification.close();
     
+    // イベント通知の場合はホームページを開く
+    const url = event.notification.data?.url || '/';
+    
     event.waitUntil(
-        clients.openWindow('/admin')
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+            // 既に開いているウィンドウがあればフォーカス
+            for (const client of clientList) {
+                if (client.url.includes(self.location.origin) && 'focus' in client) {
+                    return client.focus();
+                }
+            }
+            // なければ新しいウィンドウを開く
+            if (clients.openWindow) {
+                return clients.openWindow(url);
+            }
+        })
     );
 });
 
