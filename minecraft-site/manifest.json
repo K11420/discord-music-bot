@@ -3,10 +3,13 @@
   "short_name": "Bedrock",
   "description": "Minecraft Bedrock Server - 統合版サーバー",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0a0e14",
   "theme_color": "#1a1f2e",
   "orientation": "portrait",
+  "categories": ["games", "entertainment"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "icon-192.png",
@@ -20,5 +23,13 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
+  ],
+  "serviceworker": {
+    "src": "/service-worker.js",
+    "scope": "/",
+    "use_cache": true
+  },
+  "permissions": [
+    "notifications"
   ]
 }

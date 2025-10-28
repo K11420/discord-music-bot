@@ -316,7 +316,17 @@
 .notification-permission-content p {
     font-size: 1rem;
     color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.notification-support-info {
+    font-size: 0.9rem;
+    color: #4CAF50;
     margin-bottom: 1.5rem;
+}
+
+.notification-support-info small {
+    font-weight: 600;
 }
 
 @keyframes pulse {

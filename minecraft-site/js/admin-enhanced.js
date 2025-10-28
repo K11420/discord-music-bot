@@ -191,9 +191,16 @@ function showAdminNotification(title, message, type = 'info') {
     sendBrowserNotification(title, message);
 }
 
-// Send browser notification
+// Send browser notification (with iOS Service Worker support)
 async function sendBrowserNotification(title, message) {
-    // Check if Notification API is supported
+    // Try Service Worker first (works on iOS PWA)
+    const swSent = await sendServiceWorkerNotification(title, message);
+    if (swSent) {
+        console.log('✅ Notification sent via Service Worker (iOS compatible)');
+        return;
+    }
+    
+    // Fallback to Notification API
     if (typeof Notification === 'undefined') {
         console.log('⚠️ Notification API not supported');
         return;
@@ -435,7 +442,10 @@ function setupNotificationPermission() {
 }
 
 // Initialize enhanced features
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // Register Service Worker first (for iOS notifications)
+    await registerServiceWorker();
+    
     // Check if we're on the admin page
     const dashboard = document.getElementById('admin-dashboard');
     if (dashboard && dashboard.style.display !== 'none') {
@@ -462,6 +472,48 @@ if (originalUpdateStatus) {
     };
 }
 
+// Register Service Worker for iOS notifications
+async function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        try {
+            const registration = await navigator.serviceWorker.register('/service-worker.js');
+            console.log('✅ Service Worker registered:', registration);
+            
+            // Wait for service worker to be ready
+            await navigator.serviceWorker.ready;
+            console.log('✅ Service Worker ready');
+            
+            return registration;
+        } catch (error) {
+            console.error('❌ Service Worker registration failed:', error);
+            return null;
+        }
+    } else {
+        console.log('⚠️ Service Worker not supported');
+        return null;
+    }
+}
+
+// Send notification via Service Worker (iOS compatible)
+async function sendServiceWorkerNotification(title, message) {
+    try {
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'SHOW_NOTIFICATION',
+                title: title,
+                body: message,
+                icon: '/icon-192.png'
+            });
+            console.log('✅ Service Worker notification sent');
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.error('❌ Service Worker notification error:', error);
+        return false;
+    }
+}
+
 // Expose functions to global scope for onclick handlers
 window.createEvent = createEvent;
 window.executeQuickCommand = executeQuickCommand;
@@ -469,5 +521,6 @@ window.deleteEvent = deleteEvent;
 window.loadAdminEvents = loadAdminEvents;
 window.checkNotificationPermission = checkNotificationPermission;
 window.setupNotificationPermission = setupNotificationPermission;
+window.registerServiceWorker = registerServiceWorker;
 
 console.log('✅ Enhanced admin features loaded');
