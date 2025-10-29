@@ -140,6 +140,14 @@
                 html += `✅ Notifications: Supported (permission: ${Notification.permission})<br>`;
             } else {
                 html += '❌ Notifications: Not supported<br>';
+                html += '<div style="color: #ff9800; margin-top: 10px; padding: 10px; background: rgba(255,152,0,0.1); border-radius: 4px;">';
+                html += '⚠️ <strong>iOS Safari</strong>: プッシュ通知を使うには、このサイトを<strong>ホーム画面に追加</strong>してPWAとして開く必要があります。<br><br>';
+                html += '📱 <strong>手順</strong>:<br>';
+                html += '1. Safari下部の「共有」ボタンをタップ<br>';
+                html += '2. 「ホーム画面に追加」を選択<br>';
+                html += '3. 追加されたアイコンからアプリを開く<br>';
+                html += '4. このページに戻って確認';
+                html += '</div>';
             }
             
             // Check Push support
@@ -147,6 +155,19 @@
                 html += '✅ Push API: Supported<br>';
             } else {
                 html += '❌ Push API: Not supported<br>';
+            }
+            
+            // Check if running as PWA
+            const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                          window.navigator.standalone === true;
+            if (isPWA) {
+                html += '<div style="color: #4CAF50; margin-top: 10px; padding: 10px; background: rgba(76,175,80,0.1); border-radius: 4px;">';
+                html += '✅ PWAモードで実行中！通知が利用可能です。';
+                html += '</div>';
+            } else {
+                html += '<div style="color: #ff9800; margin-top: 10px; padding: 10px; background: rgba(255,152,0,0.1); border-radius: 4px;">';
+                html += '⚠️ ブラウザモードで実行中。iOSでプッシュ通知を使うには、ホーム画面に追加してPWAとして起動してください。';
+                html += '</div>';
             }
             
             status.innerHTML = html;
