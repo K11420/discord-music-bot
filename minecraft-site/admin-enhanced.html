@@ -26,11 +26,10 @@
         <!-- Header -->
         <header class="admin-header">
             <div class="header-left">
-                <h1>⛏️ Bedrock Server 管理画面</h1>
+                <h1>⛏️ Bedrock Server</h1>
             </div>
             <div class="header-right">
                 <span class="header-status" id="header-status">確認中...</span>
-                <button class="btn btn-logout" onclick="logout()">ログアウト</button>
             </div>
         </header>
 
@@ -103,7 +102,10 @@
                 </div>
                 
                 <div class="event-list-section">
-                    <h3>イベント一覧</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3>イベント一覧</h3>
+                        <button class="btn btn-danger" id="delete-all-events-btn" onclick="deleteAllEvents()" style="display: none;">🗑️ 全て削除</button>
+                    </div>
                     <div id="admin-events-list" class="admin-events-list">
                         <div class="loading">イベントを読み込み中...</div>
                     </div>

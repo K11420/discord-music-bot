@@ -273,6 +273,12 @@ async function loadAdminEvents() {
             return;
         }
         
+        // Show/hide bulk delete button
+        const deleteAllBtn = document.getElementById('delete-all-events-btn');
+        if (deleteAllBtn) {
+            deleteAllBtn.style.display = data.events && data.events.length > 0 ? 'inline-block' : 'none';
+        }
+        
         if (data.events && data.events.length > 0) {
             container.innerHTML = data.events.map(event => {
                 const date = new Date(event.event_date);
@@ -360,6 +366,79 @@ async function deleteEvent(eventId) {
         showAdminNotification(
             '❌ エラー', 
             'エラーが発生しました: ' + error.message, 
+            'error'
+        );
+    }
+}
+
+// Delete all events
+async function deleteAllEvents() {
+    // First fetch all events
+    try {
+        const response = await fetch('/api/events?limit=1000');
+        const data = await response.json();
+        
+        if (!data.events || data.events.length === 0) {
+            showAdminNotification('ℹ️ 情報', '削除するイベントがありません', 'info');
+            return;
+        }
+        
+        const count = data.events.length;
+        if (!confirm(`本当に全てのイベント（${count}件）を削除しますか？\nこの操作は取り消せません。`)) {
+            return;
+        }
+        
+        console.log(`🗑️ Deleting all ${count} events...`);
+        
+        // Delete each event
+        let successCount = 0;
+        let failCount = 0;
+        
+        for (const event of data.events) {
+            try {
+                const deleteResponse = await fetch(`/api/events/${event.id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (deleteResponse.ok) {
+                    successCount++;
+                } else {
+                    failCount++;
+                }
+            } catch (error) {
+                console.error(`❌ Failed to delete event ${event.id}:`, error);
+                failCount++;
+            }
+        }
+        
+        console.log(`✅ Deleted ${successCount} events, ${failCount} failures`);
+        
+        // Reload events list
+        loadAdminEvents();
+        
+        // Reload events on public page if available
+        if (typeof loadEvents === 'function') {
+            loadEvents();
+        }
+        
+        if (failCount === 0) {
+            showAdminNotification(
+                '✅ 削除完了', 
+                `全てのイベント（${successCount}件）を削除しました`, 
+                'success'
+            );
+        } else {
+            showAdminNotification(
+                '⚠️ 一部失敗', 
+                `${successCount}件削除、${failCount}件失敗`, 
+                'warning'
+            );
+        }
+    } catch (error) {
+        console.error('❌ Bulk delete error:', error);
+        showAdminNotification(
+            '❌ エラー', 
+            'イベントの一括削除に失敗しました: ' + error.message, 
             'error'
         );
     }
