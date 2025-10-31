@@ -276,25 +276,59 @@ async function sendQuickCommand(command) {
 
 // Send command
 async function sendCommand(cmd) {
-    const command = cmd || document.getElementById('terminal-input').value;
+    // Try both terminal-input (old) and command-input (enhanced)
+    const inputElement = document.getElementById('command-input') || document.getElementById('terminal-input');
+    const command = cmd || (inputElement ? inputElement.value : '');
+    
     if (!command.trim()) return;
     
     try {
         const response = await fetch('/api/server/command', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include', // Include session cookie
             body: JSON.stringify({ command })
         });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        }
         
         const data = await response.json();
         
         if (data.success) {
-            addTerminalLine(`$ ${command}`);
-            document.getElementById('terminal-input').value = '';
+            // Show success feedback
+            if (inputElement) {
+                inputElement.value = '';
+                inputElement.style.borderColor = '#4CAF50';
+                setTimeout(() => {
+                    inputElement.style.borderColor = '';
+                }, 1000);
+            }
+            
+            // Log to terminal if exists
+            const terminalOutput = document.getElementById('terminal-output');
+            if (terminalOutput) {
+                addTerminalLine(`$ ${command}`);
+            }
+            
+            // Show notification
+            if (typeof showAdminNotification === 'function') {
+                showAdminNotification('✅ コマンド送信', `コマンド "${command}" を実行しました`, 'success');
+            }
+            
             setTimeout(refreshLogs, 1000);
+        } else {
+            if (typeof showAdminNotification === 'function') {
+                showAdminNotification('❌ エラー', data.error || 'コマンドの実行に失敗しました', 'error');
+            }
         }
     } catch (error) {
-        addTerminalLine(`Error: ${error.message}`);
+        console.error('Command error:', error);
+        if (typeof showAdminNotification === 'function') {
+            showAdminNotification('❌ エラー', 'コマンドの送信に失敗しました: ' + error.message, 'error');
+        }
     }
 }
 

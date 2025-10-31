@@ -232,8 +232,139 @@ if (mobileMenuToggle) {
 
 // Removed intersection observer for performance
 
+// Register Service Worker for PWA notifications
+async function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        try {
+            const registration = await navigator.serviceWorker.register('/service-worker.js');
+            console.log('✅ Service Worker registered:', registration.scope);
+            
+            // Request notification permission after Service Worker is ready
+            if ('Notification' in window && Notification.permission === 'default') {
+                setTimeout(requestNotificationPermission, 3000);
+            }
+            
+            // Subscribe to push notifications - try immediately and after delay
+            // This handles cases where permission is already granted
+            if (Notification.permission === 'granted') {
+                await subscribeToPushNotifications(registration);
+            }
+            
+            // Also try after delay in case permission was just granted
+            setTimeout(async () => {
+                if (Notification.permission === 'granted') {
+                    await subscribeToPushNotifications(registration);
+                }
+            }, 5000);
+        } catch (error) {
+            console.log('⚠️ Service Worker registration failed:', error);
+        }
+    }
+}
+
+// Subscribe to Web Push API
+async function subscribeToPushNotifications(registration) {
+    try {
+        console.log('🔔 Starting push notification subscription...');
+        
+        // VAPID public key (server will provide this)
+        const response = await fetch('/api/vapid-public-key');
+        const { publicKey } = await response.json();
+        console.log('✅ Got VAPID public key:', publicKey.substring(0, 20) + '...');
+        
+        // Check if already subscribed
+        let subscription = await registration.pushManager.getSubscription();
+        
+        if (!subscription) {
+            console.log('📱 Creating new push subscription...');
+            // Subscribe to push notifications
+            subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(publicKey)
+            });
+            
+            console.log('✅ Subscribed to push notifications');
+        } else {
+            console.log('✅ Already subscribed to push notifications');
+            console.log('   Endpoint:', subscription.endpoint.substring(0, 50) + '...');
+        }
+        
+        // Always send subscription to server (in case server restarted)
+        console.log('📤 Sending subscription to server...');
+        const subscribeResponse = await fetch('/api/push-subscribe', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(subscription)
+        });
+        
+        if (subscribeResponse.ok) {
+            console.log('✅ Subscription sent to server');
+            const result = await subscribeResponse.json();
+            console.log('   Server response:', result);
+        } else {
+            console.log('⚠️ Failed to send subscription to server:', subscribeResponse.status);
+        }
+    } catch (error) {
+        console.log('❌ Push subscription error:', error.name, error.message);
+        console.error('Full error:', error);
+    }
+}
+
+// Convert VAPID key from base64 to Uint8Array
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+        .replace(/\-/g, '+')
+        .replace(/_/g, '/');
+    
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+
+// Request notification permission
+async function requestNotificationPermission() {
+    if (!('Notification' in window)) {
+        console.log('❌ This browser does not support notifications');
+        return;
+    }
+    
+    if (Notification.permission === 'granted') {
+        console.log('✅ Notification permission already granted');
+        return;
+    }
+    
+    if (Notification.permission !== 'denied') {
+        try {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                console.log('✅ Notification permission granted');
+                // Show welcome notification
+                new Notification('🎉 通知が有効になりました', {
+                    body: 'イベントが作成されると通知が届きます',
+                    icon: '/icon-192.png',
+                    badge: '/icon-192.png'
+                });
+            } else {
+                console.log('⚠️ Notification permission denied');
+            }
+        } catch (error) {
+            console.log('⚠️ Notification permission request error:', error);
+        }
+    }
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    // Register Service Worker
+    registerServiceWorker();
+    
     // Check server status on load
     checkServerStatus();
     

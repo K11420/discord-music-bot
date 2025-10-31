@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Push Notification Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            background: #2a2a2a;
+        }
+        .success { border-left: 4px solid #4CAF50; }
+        .error { border-left: 4px solid #f44336; }
+        .warning { border-left: 4px solid #ff9800; }
+        .info { border-left: 4px solid #2196F3; }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover { background: #45a049; }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        pre {
+            background: #000;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .log {
+            margin-top: 20px;
+            padding: 15px;
+            background: #2a2a2a;
+            border-radius: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #666;
+            padding-left: 10px;
+        }
+        h2 { color: #4CAF50; }
+    </style>
+</head>
+<body>
+    <h1>🔔 Push Notification Debug</h1>
+    
+    <div class="status info">
+        <h3>📊 System Status</h3>
+        <div id="systemStatus">Checking...</div>
+    </div>
+    
+    <div class="status info">
+        <h3>📱 Subscription Status</h3>
+        <div id="subscriptionStatus">Checking...</div>
+    </div>
+    
+    <div class="status info">
+        <h3>🌐 Server Status</h3>
+        <div id="serverStatus">Checking...</div>
+    </div>
+    
+    <div style="margin: 20px 0;">
+        <button onclick="requestPermission()">📱 Request Permission</button>
+        <button onclick="subscribe()">✅ Subscribe</button>
+        <button onclick="unsubscribe()">❌ Unsubscribe</button>
+        <button onclick="testNotification()">🔔 Test Notification</button>
+        <button onclick="clearCache()">🗑️ Clear Cache</button>
+        <button onclick="checkAll()">🔄 Refresh All</button>
+    </div>
+    
+    <div class="log">
+        <h3>📝 Debug Log</h3>
+        <div id="debugLog"></div>
+    </div>
+    
+    <script>
+        const logs = [];
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString('ja-JP');
+            const entry = `[${timestamp}] ${message}`;
+            logs.push({ entry, type });
+            console.log(entry);
+            updateLogDisplay();
+        }
+        
+        function updateLogDisplay() {
+            const logDiv = document.getElementById('debugLog');
+            logDiv.innerHTML = logs.map(l => 
+                `<div class="log-entry" style="border-left-color: ${
+                    l.type === 'error' ? '#f44336' : 
+                    l.type === 'success' ? '#4CAF50' : 
+                    l.type === 'warning' ? '#ff9800' : '#2196F3'
+                }">${l.entry}</div>`
+            ).reverse().join('');
+        }
+        
+        async function checkSystemStatus() {
+            const status = document.getElementById('systemStatus');
+            let html = '';
+            
+            // Check Service Worker support
+            if ('serviceWorker' in navigator) {
+                html += '✅ Service Worker: Supported<br>';
+                
+                const registration = await navigator.serviceWorker.getRegistration();
+                if (registration) {
+                    html += `✅ Service Worker: Registered (scope: ${registration.scope})<br>`;
+                    html += `   State: ${registration.active?.state || 'unknown'}<br>`;
+                } else {
+                    html += '❌ Service Worker: Not registered<br>';
+                }
+            } else {
+                html += '❌ Service Worker: Not supported<br>';
+            }
+            
+            // Check Notification support
+            if ('Notification' in window) {
+                html += `✅ Notifications: Supported (permission: ${Notification.permission})<br>`;
+            } else {
+                html += '❌ Notifications: Not supported<br>';
+                html += '<div style="color: #ff9800; margin-top: 10px; padding: 10px; background: rgba(255,152,0,0.1); border-radius: 4px;">';
+                html += '⚠️ <strong>iOS Safari</strong>: プッシュ通知を使うには、このサイトを<strong>ホーム画面に追加</strong>してPWAとして開く必要があります。<br><br>';
+                html += '📱 <strong>手順</strong>:<br>';
+                html += '1. Safari下部の「共有」ボタンをタップ<br>';
+                html += '2. 「ホーム画面に追加」を選択<br>';
+                html += '3. 追加されたアイコンからアプリを開く<br>';
+                html += '4. このページに戻って確認';
+                html += '</div>';
+            }
+            
+            // Check Push support
+            if ('PushManager' in window) {
+                html += '✅ Push API: Supported<br>';
+            } else {
+                html += '❌ Push API: Not supported<br>';
+            }
+            
+            // Check if running as PWA
+            const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                          window.navigator.standalone === true;
+            if (isPWA) {
+                html += '<div style="color: #4CAF50; margin-top: 10px; padding: 10px; background: rgba(76,175,80,0.1); border-radius: 4px;">';
+                html += '✅ PWAモードで実行中！通知が利用可能です。';
+                html += '</div>';
+            } else {
+                html += '<div style="color: #ff9800; margin-top: 10px; padding: 10px; background: rgba(255,152,0,0.1); border-radius: 4px;">';
+                html += '⚠️ ブラウザモードで実行中。iOSでプッシュ通知を使うには、ホーム画面に追加してPWAとして起動してください。';
+                html += '</div>';
+            }
+            
+            status.innerHTML = html;
+            log('System status checked');
+        }
+        
+        async function checkSubscriptionStatus() {
+            const status = document.getElementById('subscriptionStatus');
+            
+            try {
+                const registration = await navigator.serviceWorker.ready;
+                const subscription = await registration.pushManager.getSubscription();
+                
+                if (subscription) {
+                    status.innerHTML = `
+                        ✅ Subscribed<br>
+                        Endpoint: ${subscription.endpoint.substring(0, 60)}...<br>
+                        <button onclick="copyToClipboard('${subscription.endpoint}')">Copy Full Endpoint</button><br>
+                        <pre>${JSON.stringify(subscription.toJSON(), null, 2)}</pre>
+                    `;
+                    log('Active subscription found', 'success');
+                } else {
+                    status.innerHTML = '❌ Not subscribed';
+                    log('No active subscription', 'warning');
+                }
+            } catch (error) {
+                status.innerHTML = `❌ Error: ${error.message}`;
+                log(`Subscription check error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkServerStatus() {
+            const status = document.getElementById('serverStatus');
+            
+            try {
+                const response = await fetch('/api/push-debug');
+                const data = await response.json();
+                
+                status.innerHTML = `
+                    VAPID Configured: ${data.vapidConfigured ? '✅' : '❌'}<br>
+                    Active Subscriptions on Server: <strong>${data.count}</strong><br>
+                    ${data.subscriptions.map(s => 
+                        `<div style="margin-top:5px; font-size:12px;">
+                            📱 ${s.endpoint}<br>
+                            &nbsp;&nbsp;&nbsp;p256dh: ${s.p256dh}<br>
+                            &nbsp;&nbsp;&nbsp;auth: ${s.auth}
+                        </div>`
+                    ).join('')}
+                `;
+                log(`Server has ${data.count} subscription(s)`, data.count > 0 ? 'success' : 'warning');
+            } catch (error) {
+                status.innerHTML = `❌ Error: ${error.message}`;
+                log(`Server status check error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function requestPermission() {
+            log('Requesting notification permission...');
+            try {
+                const permission = await Notification.requestPermission();
+                log(`Permission result: ${permission}`, permission === 'granted' ? 'success' : 'warning');
+                await checkAll();
+            } catch (error) {
+                log(`Permission error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function subscribe() {
+            log('Starting subscription process...');
+            try {
+                // Register service worker
+                const registration = await navigator.serviceWorker.register('/service-worker.js');
+                log('Service Worker registered', 'success');
+                
+                await navigator.serviceWorker.ready;
+                log('Service Worker ready', 'success');
+                
+                // Get VAPID public key
+                const response = await fetch('/api/vapid-public-key');
+                const { publicKey } = await response.json();
+                log(`Got VAPID key: ${publicKey.substring(0, 20)}...`, 'success');
+                
+                // Subscribe
+                const subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(publicKey)
+                });
+                log('Push subscription created', 'success');
+                
+                // Send to server
+                const subscribeResponse = await fetch('/api/push-subscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(subscription)
+                });
+                
+                if (subscribeResponse.ok) {
+                    log('Subscription sent to server successfully', 'success');
+                } else {
+                    log('Failed to send subscription to server', 'error');
+                }
+                
+                await checkAll();
+            } catch (error) {
+                log(`Subscribe error: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+        
+        async function unsubscribe() {
+            log('Unsubscribing...');
+            try {
+                const registration = await navigator.serviceWorker.ready;
+                const subscription = await registration.pushManager.getSubscription();
+                
+                if (subscription) {
+                    await subscription.unsubscribe();
+                    log('Unsubscribed successfully', 'success');
+                } else {
+                    log('No subscription to unsubscribe', 'warning');
+                }
+                
+                await checkAll();
+            } catch (error) {
+                log(`Unsubscribe error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testNotification() {
+            log('Testing notification...');
+            if (Notification.permission === 'granted') {
+                new Notification('🔔 Test Notification', {
+                    body: 'This is a local test notification',
+                    icon: '/icon-192.png'
+                });
+                log('Local notification sent', 'success');
+            } else {
+                log('Notification permission not granted', 'error');
+            }
+        }
+        
+        async function clearCache() {
+            log('Clearing cache...');
+            try {
+                const cacheNames = await caches.keys();
+                for (const name of cacheNames) {
+                    await caches.delete(name);
+                    log(`Deleted cache: ${name}`, 'success');
+                }
+                
+                const registration = await navigator.serviceWorker.getRegistration();
+                if (registration) {
+                    await registration.unregister();
+                    log('Service Worker unregistered', 'success');
+                }
+                
+                log('Please reload the page', 'warning');
+            } catch (error) {
+                log(`Clear cache error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkAll() {
+            await checkSystemStatus();
+            await checkSubscriptionStatus();
+            await checkServerStatus();
+        }
+        
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                log('Endpoint copied to clipboard', 'success');
+            });
+        }
+        
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
+        
+        // Auto-check on load
+        window.addEventListener('load', checkAll);
+        
+        log('Debug page loaded', 'info');
+    </script>
+</body>
+</html>

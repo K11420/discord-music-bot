@@ -1,0 +1,7 @@
+# Minecraftサーバーコンソールで実行するコマンド
+scoreboard objectives add blocks_placed dummy "ブロック設置"
+scoreboard objectives add blocks_broken dummy "ブロック破壊"
+scoreboard objectives add distance_walked minecraft.custom:minecraft.walk_one_cm "移動距離"
+scoreboard objectives add deaths deathCount "死亡数"
+scoreboard objectives add playtime dummy "プレイ時間"
+scoreboard objectives setdisplay sidebar playtime
